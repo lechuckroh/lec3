@@ -102,11 +102,11 @@ func processLineRanges(
 	targetHeight := 0
 	for i := 0; i < len(ranges); i++ {
 		r := &ranges[i]
-		r.calc(opt.lineSpaceScale, opt.minSpace, opt.maxRemove)
+		r.calc(opt.LineSpaceScale, opt.MinSpace, opt.MaxRemove)
 		targetHeight += r.targetHeight
 	}
 
-	minTargetHeight := int(opt.heightRatio * float32(width) / opt.widthRatio)
+	minTargetHeight := int(opt.HeightRatio * float32(width) / opt.WidthRatio)
 
 	loop := 0
 	maxLoopCount := 5
@@ -153,13 +153,13 @@ func processLineRanges(
 
 // ChangeLineSpaceOption contains options for changeLineSpace filter
 type ChangeLineSpaceOption struct {
-	widthRatio         float32
-	heightRatio        float32
-	lineSpaceScale     float32
-	minSpace           int
-	maxRemove          int
-	threshold          uint32
-	emptyLineThreshold float64
+	WidthRatio         float32
+	HeightRatio        float32
+	LineSpaceScale     float32
+	MinSpace           int
+	MaxRemove          int
+	Threshold          uint32
+	EmptyLineThreshold float64
 }
 
 // ChangeLineSpace removes/adds spaces between lines
@@ -167,7 +167,7 @@ func ChangeLineSpace(
 	src image.Image,
 	option ChangeLineSpaceOption) image.Image {
 
-	ranges := getLineRanges(src, option.threshold, option.emptyLineThreshold)
+	ranges := getLineRanges(src, option.Threshold, option.EmptyLineThreshold)
 
 	width := src.Bounds().Dx()
 	targetHeight := processLineRanges(ranges, width, option)
