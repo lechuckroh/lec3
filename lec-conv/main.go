@@ -63,6 +63,16 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 		wg.Done()
 	}()
 
+	changeLineSpaceFilter := img.NewChangeLineSpaceFilter(img.ChangeLineSpaceOption{
+		WidthRatio:         float64(config.width),
+		HeightRatio:        float64(config.height),
+		LineSpaceScale:     0.1,
+		MinSpace:           1,
+		MaxRemove:          9999,
+		Threshold:          180,
+		EmptyLineThreshold: config.emptyLineThreshold,
+	})
+
 	for {
 		work := <-worker.workChan
 		if work.quit {
@@ -82,16 +92,9 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 		var dest image.Image
 
 		// change line space
-		dest = img.ChangeLineSpace(src,
-			img.ChangeLineSpaceOption{
-				WidthRatio:         float64(config.width),
-				HeightRatio:        float64(config.height),
-				LineSpaceScale:     0.1,
-				MinSpace:           1,
-				MaxRemove:          9999,
-				Threshold:          180,
-				EmptyLineThreshold: config.emptyLineThreshold,
-			})
+		result := changeLineSpaceFilter.Run(img.NewFilterSource(src, work.filename))
+		result.Log()
+		dest = result.Img()
 
 		// resize
 		dest = img.ResizeImage(dest, config.width, config.height)

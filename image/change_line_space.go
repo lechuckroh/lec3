@@ -1,9 +1,46 @@
 package image
 
 import (
+	"github.com/mitchellh/mapstructure"
 	"image"
 	"image/draw"
 )
+
+// ChangeLineSpaceOption contains options for changeLineSpace filter
+type ChangeLineSpaceOption struct {
+	WidthRatio         float64
+	HeightRatio        float64
+	LineSpaceScale     float64
+	MinSpace           int
+	MaxRemove          int
+	Threshold          uint32
+	EmptyLineThreshold float64
+}
+
+func NewChangeLineSpaceOption(m map[string]interface{}) (*ChangeLineSpaceOption, error) {
+	option := ChangeLineSpaceOption{}
+
+	err := mapstructure.Decode(m, &option)
+	if err != nil {
+		return nil, err
+	}
+
+	return &option, nil
+}
+
+type ChangeLineSpaceResult struct {
+	image image.Image
+	rect  image.Rectangle
+}
+
+func (r ChangeLineSpaceResult) Img() image.Image {
+	return r.image
+}
+
+func (r ChangeLineSpaceResult) Log() {
+}
+
+// ----------------------------------------------------------------------------
 
 type lineRange struct {
 	start        int
@@ -31,24 +68,32 @@ func (r *lineRange) getReducedHeight() int {
 	return r.height - r.targetHeight
 }
 
+// ----------------------------------------------------------------------------
+
+type ChangeLineSpaceFilter struct {
+	option ChangeLineSpaceOption
+}
+
+func NewChangeLineSpaceFilter(option ChangeLineSpaceOption) *ChangeLineSpaceFilter {
+	return &ChangeLineSpaceFilter{option: option}
+}
+
 func getBrightness(r, g, b uint32) uint32 {
 	return (r + g + b) / 3
 }
 
 // getLineRanges returns list of text and empty lines
-func getLineRanges(src image.Image,
-	threshold uint32,
-	emptyLineThreshold float64) []lineRange {
+func (f ChangeLineSpaceFilter) getLineRanges(src image.Image) []lineRange {
 	bounds := src.Bounds()
 	srcWidth, srcHeight := bounds.Dx(), bounds.Dy()
-	threshold16 := threshold * 256
+	threshold16 := f.option.Threshold * 256
 
 	var ranges []lineRange
 	var r lineRange
 
-	maxDotCount := int(emptyLineThreshold)
-	if emptyLineThreshold < 1 {
-		maxDotCount = int(float64(srcWidth) * emptyLineThreshold)
+	maxDotCount := int(f.option.EmptyLineThreshold)
+	if f.option.EmptyLineThreshold < 1 {
+		maxDotCount = int(float64(srcWidth) * f.option.EmptyLineThreshold)
 	}
 	for y := 0; y < srcHeight; y++ {
 		emptyLine := true
@@ -94,19 +139,15 @@ func getLineRanges(src image.Image,
 	return ranges
 }
 
-func processLineRanges(
-	ranges []lineRange,
-	width int,
-	opt ChangeLineSpaceOption) int {
-
+func (f ChangeLineSpaceFilter) processLineRanges(ranges []lineRange, width int) int {
 	targetHeight := 0
 	for i := 0; i < len(ranges); i++ {
 		r := &ranges[i]
-		r.calc(opt.LineSpaceScale, opt.MinSpace, opt.MaxRemove)
+		r.calc(f.option.LineSpaceScale, f.option.MinSpace, f.option.MaxRemove)
 		targetHeight += r.targetHeight
 	}
 
-	minTargetHeight := int(opt.HeightRatio * float64(width) / opt.WidthRatio)
+	minTargetHeight := int(f.option.HeightRatio * float64(width) / f.option.WidthRatio)
 
 	loop := 0
 	maxLoopCount := 5
@@ -151,44 +192,40 @@ func processLineRanges(
 	return targetHeight
 }
 
-// ChangeLineSpaceOption contains options for changeLineSpace filter
-type ChangeLineSpaceOption struct {
-	WidthRatio         float64
-	HeightRatio        float64
-	LineSpaceScale     float64
-	MinSpace           int
-	MaxRemove          int
-	Threshold          uint32
-	EmptyLineThreshold float64
+func (f ChangeLineSpaceFilter) Run(s *FilterSource) FilterResult {
+	img, rect := f.run(s.image)
+	return &ChangeLineSpaceResult{img, rect}
 }
 
-// ChangeLineSpace removes/adds spaces between lines
-func ChangeLineSpace(
-	src image.Image,
-	option ChangeLineSpaceOption) image.Image {
+func (f ChangeLineSpaceFilter) run(src image.Image) (image.Image, image.Rectangle) {
+	ranges := f.getLineRanges(src)
+	rangeCount := len(ranges)
 
-	ranges := getLineRanges(src, option.Threshold, option.EmptyLineThreshold)
+	if rangeCount <= 1 {
+		return src, src.Bounds()
+	} else {
+		width := src.Bounds().Dx()
+		targetHeight := f.processLineRanges(ranges, width)
 
-	width := src.Bounds().Dx()
-	targetHeight := processLineRanges(ranges, width, option)
+		bounds := image.Rect(0, 0, width, targetHeight)
+		dest := image.NewRGBA(bounds)
+		destY := 0
+		for i := 0; i < rangeCount; i++ {
+			r := &ranges[i]
+			rangeHeight := r.height
+			rangeTargetHeight := r.targetHeight
 
-	dest := image.NewRGBA(image.Rect(0, 0, width, targetHeight))
-	destY := 0
-	for i := 0; i < len(ranges); i++ {
-		r := &ranges[i]
-		rangeHeight := r.height
-		rangeTargetHeight := r.targetHeight
+			if rangeHeight > 0 && rangeTargetHeight > 0 {
+				srcRect := image.Rect(0, r.start, width, r.start+rangeTargetHeight)
+				subImage := src.(interface {
+					SubImage(r image.Rectangle) image.Image
+				}).SubImage(srcRect)
 
-		if rangeHeight > 0 && rangeTargetHeight > 0 {
-			srcRect := image.Rect(0, r.start, width, r.start+rangeTargetHeight)
-			subImage := src.(interface {
-				SubImage(r image.Rectangle) image.Image
-			}).SubImage(srcRect)
-
-			destRect := image.Rect(0, destY, width, targetHeight)
-			draw.Draw(dest, destRect, subImage, image.ZP, draw.Src)
-			destY -= rangeHeight - rangeTargetHeight
+				destRect := image.Rect(0, destY, width, targetHeight)
+				draw.Draw(dest, destRect, subImage, image.ZP, draw.Src)
+				destY -= rangeHeight - rangeTargetHeight
+			}
 		}
+		return dest, bounds
 	}
-	return dest
 }
