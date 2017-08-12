@@ -13,13 +13,13 @@ type lineRange struct {
 	emptyLine    bool
 }
 
-func (r *lineRange) calc(scale float32, minHeight, maxRemove int) {
+func (r *lineRange) calc(scale float64, minHeight, maxRemove int) {
 	r.height = r.end - r.start + 1
 	if !r.emptyLine || r.height <= minHeight {
 		r.targetHeight = r.height
 	} else {
 		if maxRemove > 0 {
-			r.targetHeight = Max(minHeight, int(float32(r.height)*scale+0.5))
+			r.targetHeight = Max(minHeight, int(float64(r.height)*scale+0.5))
 			if removed := r.height - r.targetHeight; removed > maxRemove {
 				r.targetHeight = r.height - maxRemove
 			}
@@ -106,7 +106,7 @@ func processLineRanges(
 		targetHeight += r.targetHeight
 	}
 
-	minTargetHeight := int(opt.HeightRatio * float32(width) / opt.WidthRatio)
+	minTargetHeight := int(opt.HeightRatio * float64(width) / opt.WidthRatio)
 
 	loop := 0
 	maxLoopCount := 5
@@ -153,9 +153,9 @@ func processLineRanges(
 
 // ChangeLineSpaceOption contains options for changeLineSpace filter
 type ChangeLineSpaceOption struct {
-	WidthRatio         float32
-	HeightRatio        float32
-	LineSpaceScale     float32
+	WidthRatio         float64
+	HeightRatio        float64
+	LineSpaceScale     float64
 	MinSpace           int
 	MaxRemove          int
 	Threshold          uint32
@@ -187,7 +187,7 @@ func ChangeLineSpace(
 
 			destRect := image.Rect(0, destY, width, targetHeight)
 			draw.Draw(dest, destRect, subImage, image.ZP, draw.Src)
-			destY -= (rangeHeight - rangeTargetHeight)
+			destY -= rangeHeight - rangeTargetHeight
 		}
 	}
 	return dest

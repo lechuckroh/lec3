@@ -84,8 +84,8 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 		// change line space
 		dest = img.ChangeLineSpace(src,
 			img.ChangeLineSpaceOption{
-				WidthRatio:         float32(config.width),
-				HeightRatio:        float32(config.height),
+				WidthRatio:         float64(config.width),
+				HeightRatio:        float64(config.height),
 				LineSpaceScale:     0.1,
 				MinSpace:           1,
 				MaxRemove:          9999,

@@ -66,17 +66,17 @@ func (c *Config) Print() {
 
 // NewConfig creates an instance of Config
 func NewConfig(cfgFilename string, srcDir string, destDir string) *Config {
-	config := Config{}
+	cfg := Config{}
 
 	if cfgFilename != "" {
-		config.LoadYaml(cfgFilename)
+		cfg.LoadYaml(cfgFilename)
 	}
 	if srcDir != "" {
-		config.srcDir = srcDir
+		cfg.srcDir = srcDir
 	}
 	if destDir != "" {
-		config.destDir = destDir
+		cfg.destDir = destDir
 	}
 
-	return &config
+	return &cfg
 }
