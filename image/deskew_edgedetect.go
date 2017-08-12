@@ -114,8 +114,6 @@ func (f DeskewEDFilter) detectAngle(edImg *image.Gray, name string) float32 {
 	// increase rotation angle by incrStep
 	detectedAngle := float32(0)
 
-	prevPositiveCount := minNonEmptyLineCount
-	prevNegativeCount := minNonEmptyLineCount
 	positiveDir := true
 	negativeDir := true
 
@@ -128,10 +126,9 @@ func (f DeskewEDFilter) detectAngle(edImg *image.Gray, name string) float32 {
 				if nonEmptyLineCount < minNonEmptyLineCount {
 					minNonEmptyLineCount = nonEmptyLineCount
 					detectedAngle = angle
-				} else if nonEmptyLineCount >= prevPositiveCount+tolerance {
+				} else if nonEmptyLineCount >= minNonEmptyLineCount+tolerance {
 					positiveDir = false
 				}
-				prevPositiveCount = nonEmptyLineCount
 			}
 
 			if angle > 0 && negativeDir {
@@ -140,10 +137,9 @@ func (f DeskewEDFilter) detectAngle(edImg *image.Gray, name string) float32 {
 				if nonEmptyLineCount < minNonEmptyLineCount {
 					minNonEmptyLineCount = nonEmptyLineCount
 					detectedAngle = -angle
-				} else if nonEmptyLineCount >= prevNegativeCount+tolerance {
+				} else if nonEmptyLineCount >= minNonEmptyLineCount+tolerance {
 					negativeDir = false
 				}
-				prevNegativeCount = nonEmptyLineCount
 			}
 		}
 	}
