@@ -16,8 +16,10 @@ type DeskewEDOption struct {
 	MaxRotation          float32 // max rotation angle (0 <= value <= 360)
 	IncrStep             float32 // rotation angle increment step (0 <= value <= 360)
 	EmptyLineMaxDotCount int
+	EmptyLineMaxDotRate  float32 // max dot count rate (0 <= value < 1.0)
 	DebugMode            bool
 	Threshold            uint8   // edge strength threshold (0~255(max edge))
+	DetectToleranceRate  float32 // max dot count diff rate (0 <= value < 1.0)
 }
 
 func NewDeskewEDOption(m map[string]interface{}) (*DeskewEDOption, error) {
@@ -107,6 +109,7 @@ func (f DeskewEDFilter) rotateImage(src image.Image, angle float32) image.Image 
 // Detect rotation angle
 func (f DeskewEDFilter) detectAngle(edImg *image.Gray, name string) float32 {
 	minNonEmptyLineCount := f.calcNonEmptyLineCount(edImg, 0, name)
+	tolerance := int(float32(edImg.Bounds().Dx()) * f.option.DetectToleranceRate)
 
 	// increase rotation angle by incrStep
 	detectedAngle := float32(0)
@@ -125,7 +128,7 @@ func (f DeskewEDFilter) detectAngle(edImg *image.Gray, name string) float32 {
 				if nonEmptyLineCount < minNonEmptyLineCount {
 					minNonEmptyLineCount = nonEmptyLineCount
 					detectedAngle = angle
-				} else if nonEmptyLineCount >= prevPositiveCount {
+				} else if nonEmptyLineCount >= prevPositiveCount+tolerance {
 					positiveDir = false
 				}
 				prevPositiveCount = nonEmptyLineCount
@@ -137,16 +140,12 @@ func (f DeskewEDFilter) detectAngle(edImg *image.Gray, name string) float32 {
 				if nonEmptyLineCount < minNonEmptyLineCount {
 					minNonEmptyLineCount = nonEmptyLineCount
 					detectedAngle = -angle
-				} else if nonEmptyLineCount >= prevNegativeCount {
+				} else if nonEmptyLineCount >= prevNegativeCount+tolerance {
 					negativeDir = false
 				}
 				prevNegativeCount = nonEmptyLineCount
 			}
 		}
-	}
-
-	if detectedAngle != 0 {
-		log.Printf("detected angle %v\n", detectedAngle)
 	}
 
 	return detectedAngle

@@ -28,10 +28,11 @@ func TestDeskewCCW(t *testing.T) {
 
 	// Run Filter
 	option := DeskewOption{
-		MaxRotation:          2,
-		IncrStep:             0.2,
-		Threshold:            220,
-		EmptyLineMaxDotCount: 0,
+		MaxRotation:         2,
+		IncrStep:            0.2,
+		Threshold:           220,
+		EmptyLineMaxDotRate: 0.01,
+		DetectToleranceRate: 0.005,
 	}
 	testDeskew(t, rotatedImg, option, 1.2, 1.6)
 }

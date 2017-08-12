@@ -28,6 +28,8 @@ func TestDeskewEDCCW(t *testing.T) {
 		IncrStep:             0.2,
 		Threshold:            100,
 		EmptyLineMaxDotCount: 0,
+		EmptyLineMaxDotRate:  0.01,
+		DetectToleranceRate:  0.005,
 	}
 	testDeskewED(t, rotatedImg, option, 1.2, 1.6)
 }
@@ -43,6 +45,8 @@ func TestDeskewEDCW(t *testing.T) {
 		IncrStep:             0.2,
 		Threshold:            100,
 		EmptyLineMaxDotCount: 0,
+		EmptyLineMaxDotRate:  0.01,
+		DetectToleranceRate:  0.005,
 	}
 	testDeskewED(t, rotatedImg, option, -1.6, -1.2)
 }

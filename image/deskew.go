@@ -16,9 +16,11 @@ type DeskewOption struct {
 	MaxRotation          float32 // max rotation angle (0 <= value <= 360)
 	IncrStep             float32 // rotation angle increment step (0 <= value <= 360)
 	EmptyLineMaxDotCount int
+	EmptyLineMaxDotRate  float32 // max dot count rate (0 <= value < 1.0)
 	DebugOutputDir       string
 	DebugMode            bool
-	Threshold            uint8 // min brightness of space (0~255)
+	Threshold            uint8   // min brightness of space (0~255)
+	DetectToleranceRate  float32 // max dot count diff rate (0 <= value < 1.0)
 }
 
 func NewDeskewOption(m map[string]interface{}) (*DeskewOption, error) {
@@ -98,6 +100,7 @@ func (f DeskewFilter) rotateImage(src image.Image, angle float32) image.Image {
 
 func (f DeskewFilter) detectAngle(src *image.RGBA, name string) float32 {
 	minNonEmptyLineCount := f.calcNonEmptyLineCount(src, 0, name)
+	tolerance := int(float32(src.Bounds().Dx()) * f.option.DetectToleranceRate)
 
 	// increase rotation angle by incrStep
 	detectedAngle := float32(0)
@@ -116,7 +119,7 @@ func (f DeskewFilter) detectAngle(src *image.RGBA, name string) float32 {
 				if nonEmptyLineCount < minNonEmptyLineCount {
 					minNonEmptyLineCount = nonEmptyLineCount
 					detectedAngle = angle
-				} else if nonEmptyLineCount >= prevPositiveCount {
+				} else if nonEmptyLineCount >= prevPositiveCount+tolerance {
 					positiveDir = false
 				}
 				prevPositiveCount = nonEmptyLineCount
@@ -128,7 +131,7 @@ func (f DeskewFilter) detectAngle(src *image.RGBA, name string) float32 {
 				if nonEmptyLineCount < minNonEmptyLineCount {
 					minNonEmptyLineCount = nonEmptyLineCount
 					detectedAngle = -angle
-				} else if nonEmptyLineCount >= prevNegativeCount {
+				} else if nonEmptyLineCount >= prevNegativeCount+tolerance {
 					negativeDir = false
 				}
 				prevNegativeCount = nonEmptyLineCount
@@ -146,6 +149,12 @@ func (f DeskewFilter) calcNonEmptyLineCount(src *image.RGBA, angle float32, name
 	thresholdSum := uint32(f.option.Threshold) * 256 * 3
 	nonEmptyLineCount := 0
 	width, height := bounds.Dx(), bounds.Dy()
+
+	emptyLineMaxDotCount := f.option.EmptyLineMaxDotCount
+	if emptyLineMaxDotCount == 0 {
+		emptyLineMaxDotCount = int(f.option.EmptyLineMaxDotRate * float32(width))
+	}
+
 	for y := 0; y < height; y++ {
 		yPos := float32(y)
 		dotCount := 0
@@ -163,7 +172,7 @@ func (f DeskewFilter) calcNonEmptyLineCount(src *image.RGBA, angle float32, name
 			yPos += dy
 		}
 
-		if f.option.EmptyLineMaxDotCount < dotCount {
+		if emptyLineMaxDotCount < dotCount {
 			nonEmptyLineCount++
 		}
 	}
