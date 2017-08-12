@@ -1,12 +1,13 @@
 package image
 
 import (
-	"github.com/disintegration/gift"
-	"github.com/mitchellh/mapstructure"
 	"image"
 	"image/color"
-	"log"
 	"image/draw"
+	"log"
+
+	"github.com/disintegration/gift"
+	"github.com/mitchellh/mapstructure"
 )
 
 // ----------------------------------------------------------------------------

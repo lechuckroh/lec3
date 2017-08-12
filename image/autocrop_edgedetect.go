@@ -108,7 +108,10 @@ func (f AutoCropEDFilter) run(src image.Image) (image.Image, image.Rectangle) {
 	right := f.findRightEdge(edgeDetected, width, height, top, bottom, left)
 
 	// maxCrop
-	disableMaxCrop := (o.MaxCropTop == 0 && o.MaxCropBottom == 0 && o.MaxCropLeft == 0 && o.MaxCropRight == 0)
+	disableMaxCrop := o.MaxCropTop == 0 &&
+		o.MaxCropBottom == 0 &&
+		o.MaxCropLeft == 0 &&
+		o.MaxCropRight == 0
 	if !disableMaxCrop {
 		if o.MaxCropTop >= 0 {
 			top = Min(o.MaxCropTop, top)
@@ -126,7 +129,15 @@ func (f AutoCropEDFilter) run(src image.Image) (image.Image, image.Rectangle) {
 
 	// crop image
 	if top > 0 || left > 0 || right+1 < width || bottom+1 < height {
-		cropRect := GetCropRect(left, top, right+1, bottom+1, bounds, o.MaxWidthCropRate, o.MaxHeightCropRate, o.MinRatio, o.MaxRatio)
+		cropRect := GetCropRect(left,
+			top,
+			right+1,
+			bottom+1,
+			bounds,
+			o.MaxWidthCropRate,
+			o.MaxHeightCropRate,
+			o.MinRatio,
+			o.MaxRatio)
 		dest := image.NewRGBA(cropRect)
 		draw.Draw(dest, dest.Bounds(), &image.Uniform{color.White}, image.ZP, draw.Src)
 		crop := gift.New(gift.Crop(cropRect))

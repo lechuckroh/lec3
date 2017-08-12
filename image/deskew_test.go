@@ -6,14 +6,18 @@ import (
 	"testing"
 )
 
-func testDeskew(t *testing.T, img image.Image, option DeskewOption, rotatedAngleMin, rotatedAngleMax float32) {
+func testDeskew(t *testing.T,
+	img image.Image,
+	option DeskewOption,
+	rotatedAngleMin, rotatedAngleMax float32) {
 	// Run Filter
 	result := NewDeskewFilter(option).Run(NewFilterSource(img, "filename"))
 	rotatedAngle := result.(DeskewResult).rotatedAngle
 
 	// Test result image size
 	if !InRangef32(rotatedAngle, rotatedAngleMin, rotatedAngleMax) {
-		t.Errorf("angle mismatch. exepcted=(%v ~ %v), actual=%v", rotatedAngleMin, rotatedAngleMax, rotatedAngle)
+		t.Errorf("angle mismatch. exepcted=(%v ~ %v), actual=%v",
+			rotatedAngleMin, rotatedAngleMax, rotatedAngle)
 	}
 }
 
