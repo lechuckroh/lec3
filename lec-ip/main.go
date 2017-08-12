@@ -86,7 +86,7 @@ func work(worker Worker, filters []img.Filter, destDir string, wg *sync.WaitGrou
 			result := filter.Run(img.NewFilterSource(src, work.filename))
 			result.Log()
 
-			resultImg := result.Image()
+			resultImg := result.Img()
 			if resultImg == nil {
 				log.Printf("Filter result is nil. filter: %v\n", reflect.TypeOf(filter))
 				break
@@ -96,7 +96,7 @@ func work(worker Worker, filters []img.Filter, destDir string, wg *sync.WaitGrou
 			src = dest
 		}
 
-		// save dest Image
+		// save dest Img
 		err = img.SaveJpeg(dest, destDir, work.filename, 80)
 		if err != nil {
 			log.Printf("Error : %v : %v\n", work.filename, err)

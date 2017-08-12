@@ -40,7 +40,7 @@ type DeskewResult struct {
 	rotatedAngle float32
 }
 
-func (r DeskewResult) Image() image.Image {
+func (r DeskewResult) Img() image.Image {
 	return r.image
 }
 

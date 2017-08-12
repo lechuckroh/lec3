@@ -96,7 +96,7 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 		// resize
 		dest = img.ResizeImage(dest, config.width, config.height)
 
-		// save dest Image
+		// save dest Img
 		// ---------------
 		filename := config.FormatDestFilename(work.filename)
 		err = img.SaveJpeg(dest, config.destDir, filename, 80)

@@ -49,8 +49,8 @@ type AutoCropEDResult struct {
 	rect  image.Rectangle
 }
 
-// Image returns the result image.
-func (r AutoCropEDResult) Image() image.Image {
+// Img returns the result image.
+func (r AutoCropEDResult) Img() image.Image {
 	return r.image
 }
 

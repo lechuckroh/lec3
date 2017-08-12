@@ -12,7 +12,7 @@ func testAutoCrop(t *testing.T, img image.Image, option AutoCropOption, expected
 	result := NewAutoCropFilter(option).Run(NewFilterSource(img, "filename"))
 
 	// Test result image size
-	destBounds := result.Image().Bounds()
+	destBounds := result.Img().Bounds()
 	widthMatch := destBounds.Dx() == expectedWidth
 	heightMatch := destBounds.Dy() == expectedHeight
 

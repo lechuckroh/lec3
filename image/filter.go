@@ -15,7 +15,7 @@ func NewFilterSource(image image.Image, filename string) *FilterSource {
 
 // FilterResult is a result of filter operation
 type FilterResult interface {
-	Image() image.Image
+	Img() image.Image
 	Log()
 }
 

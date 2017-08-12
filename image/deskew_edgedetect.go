@@ -39,7 +39,7 @@ type DeskewEDResult struct {
 	rotatedAngle float32
 }
 
-func (r DeskewEDResult) Image() image.Image {
+func (r DeskewEDResult) Img() image.Image {
 	return r.image
 }
 
@@ -84,7 +84,7 @@ func (f DeskewEDFilter) Run(s *FilterSource) FilterResult {
 
 // actual deskew implementation
 func (f DeskewEDFilter) run(src image.Image, name string) (image.Image, float32) {
-	// Edge Detect Image
+	// Edge Detect Img
 	edImg := image.NewGray(src.Bounds())
 	f.edgeDetect.Draw(edImg, src)
 
