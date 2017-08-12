@@ -114,22 +114,22 @@ func (c *Config) Print() {
 }
 
 func NewConfig(cfgFilename string, srcDir string, destDir string, watch bool) *Config {
-	config := Config{}
+	cfg := Config{}
 
 	if cfgFilename != "" {
-		config.LoadYaml(cfgFilename)
+		cfg.LoadYaml(cfgFilename)
 	} else {
-		// overwrite config with command line options
+		// overwrite cfg with command line options
 		if srcFlag := flag.Lookup("src"); srcFlag != nil {
-			config.src.dir = srcDir
+			cfg.src.dir = srcDir
 		}
 		if destFlag := flag.Lookup("dest"); destFlag != nil {
-			config.dest.dir = destDir
+			cfg.dest.dir = destDir
 		}
 		if watchFlag := flag.Lookup("watch"); watchFlag != nil {
-			config.watch = watch
+			cfg.watch = watch
 		}
 	}
 
-	return &config
+	return &cfg
 }
