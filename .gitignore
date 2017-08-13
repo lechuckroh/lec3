@@ -18,3 +18,5 @@
 /input/
 /output/
 /pkg
+
+\.DS_Store
