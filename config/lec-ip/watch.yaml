@@ -1,0 +1,34 @@
+src:
+  recursive: false
+  dir: ./input/
+
+dest:
+  dir: ./output/
+
+watch: true
+watchDelay: 5
+maxProcess: 1
+
+filters:
+  - name: deskew
+    options:
+      maxRotation: 2.0
+      incrStep: 0.2
+      emptyLineMaxDotCount: 5
+      threshold: 220
+  - name: autoCrop
+    options:
+      threshold: 220
+      minRatio: 1.0
+      maxRatio: 3.0
+      maxWidthCropRate: 0.3
+      maxHeightCropRate: 0.3
+      emptyLineMaxDotCount: 0
+      marginTop: 5
+      marginBottom: 5
+      marginLeft: 5
+      marginRight: 5
+      maxCropTop: -1
+      maxCropBottom: -1
+      maxCropLeft: -1
+      maxCropRight: -1
