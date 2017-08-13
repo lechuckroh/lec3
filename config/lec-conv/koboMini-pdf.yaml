@@ -1,8 +1,22 @@
-srcDir: ./input
-destDir: ./output/koboMini
-destFilename: ${base}.jpg
+src:
+  dir: ./input
+
+dest:
+  dir: ./output/koboMini
+  filename: ${base}.jpg
+
 width: 600
 height: 730
 quality: 80
-maxCPU: 0
-emptyLineThreshold: 0.01
+maxProcess: 0
+
+filters:
+  - name: changeLineSpace
+    options:
+      widthRatio: 600
+      heightRatio: 730
+      lineSpaceScale: 0.1
+      minSpace: 1
+      maxRemove: 9999
+      threshold: 180
+      emptyLineThreshold: 0.01

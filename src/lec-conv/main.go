@@ -5,6 +5,7 @@ import (
 	"image"
 	"log"
 	"path"
+	"reflect"
 	"runtime"
 	"sync"
 
@@ -46,20 +47,10 @@ func collectImages(workChan chan<- Work, finChan chan<- bool, srcDir string) {
 	}
 }
 
-func work(worker Worker, config *Config, wg *sync.WaitGroup) {
+func work(worker Worker, filters []limg.Filter, config *Config, wg *sync.WaitGroup) {
 	defer func() {
 		wg.Done()
 	}()
-
-	changeLineSpaceFilter := limg.NewChangeLineSpaceFilter(limg.ChangeLineSpaceOption{
-		WidthRatio:         float64(config.width),
-		HeightRatio:        float64(config.height),
-		LineSpaceScale:     0.1,
-		MinSpace:           1,
-		MaxRemove:          9999,
-		Threshold:          180,
-		EmptyLineThreshold: config.emptyLineThreshold,
-	})
 
 	for {
 		work := <-worker.workChan
@@ -75,14 +66,21 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 			continue
 		}
 
-		// process image
-		// --------------
+		// run filters
 		var dest image.Image
+		for _, filter := range filters {
+			result := filter.Run(limg.NewFilterSource(src, work.filename))
+			result.Log()
 
-		// change line space
-		result := changeLineSpaceFilter.Run(limg.NewFilterSource(src, work.filename))
-		result.Log()
-		dest = result.Img()
+			resultImg := result.Img()
+			if resultImg == nil {
+				log.Printf("Filter result is nil. filter: %v\n", reflect.TypeOf(filter))
+				break
+			}
+
+			dest = resultImg
+			src = dest
+		}
 
 		// resize
 		dest = limg.ResizeImage(dest, config.width, config.height)
@@ -90,7 +88,7 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 		// save dest Img
 		// ---------------
 		filename := config.FormatDestFilename(work.filename)
-		err = limg.SaveJpeg(dest, config.destDir, filename, 80)
+		err = limg.SaveJpeg(dest, config.dest.dir, filename, 80)
 		if err != nil {
 			log.Printf("Error : %v : %v\n", filename, err)
 			continue
@@ -107,7 +105,7 @@ func main() {
 	flag.Parse()
 
 	// Print usage
-	if flag.NFlag() == 1 && flag.Arg(1) == "help" {
+	if *cfgFilename == "" || (flag.NFlag() == 1 && flag.Arg(1) == "help") {
 		flag.Usage()
 		return
 	}
@@ -116,8 +114,8 @@ func main() {
 	config := NewConfig(*cfgFilename, *srcDir, *destDir)
 	config.Print()
 
-	// set maxCPU
-	runtime.GOMAXPROCS(config.maxCPU)
+	// set maxProcess
+	runtime.GOMAXPROCS(config.maxProcess)
 
 	// Create channels
 	workChan := make(chan Work, 100)
@@ -127,20 +125,25 @@ func main() {
 	wg := sync.WaitGroup{}
 
 	// start collector
-	go collectImages(workChan, finChan, config.srcDir)
+	go collectImages(workChan, finChan, config.src.dir)
+
+	var filters []limg.Filter
+	for _, filterOption := range config.filterOptions {
+		filters = append(filters, filterOption.filter)
+	}
 
 	// start workers
-	for i := 0; i < config.maxCPU; i++ {
+	for i := 0; i < config.maxProcess; i++ {
 		worker := Worker{workChan}
 		wg.Add(1)
-		go work(worker, config, &wg)
+		go work(worker, filters, config, &wg)
 	}
 
 	// wait for collector finish
 	<-finChan
 
 	// finish workers
-	for i := 0; i < config.maxCPU; i++ {
+	for i := 0; i < config.maxProcess; i++ {
 		workChan <- Work{"", "", true}
 	}
 

@@ -11,16 +11,28 @@ import (
 	"github.com/olebedev/config"
 )
 
+type SrcOption struct {
+	dir string
+}
+type DestOption struct {
+	dir      string
+	filename string
+}
+
+type FilterOption struct {
+	name   string
+	filter limg.Filter
+}
+
 // Config defines configuration
 type Config struct {
-	srcDir             string
-	destDir            string
-	destFilename       string
-	width              int
-	height             int
-	quality            int
-	maxCPU             int
-	emptyLineThreshold float64
+	src           SrcOption
+	dest          DestOption
+	width         int
+	height        int
+	quality       int
+	maxProcess    int
+	filterOptions []FilterOption
 }
 
 // LoadYaml loads *.yaml file
@@ -31,24 +43,63 @@ func (c *Config) LoadYaml(filename string) {
 		return
 	}
 
-	fmt.Printf("Loading %v\n", filename)
+	log.Printf("Load: %v\n", filename)
 
-	c.srcDir = cfg.UString("srcDir", "./")
-	c.destDir = cfg.UString("destDir", "./output")
-	c.destFilename = cfg.UString("destFilename", "${filename}")
+	c.src.dir = cfg.UString("src.dir", "./")
+	c.dest.dir = cfg.UString("dest.dir", "./output")
+	c.dest.filename = cfg.UString("dest.filename", "${base}.jpg")
 	c.width = cfg.UInt("width", -1)
 	c.height = cfg.UInt("height", -1)
 	c.quality = cfg.UInt("quality", 100)
-	c.maxCPU = cfg.UInt("maxCPU", runtime.NumCPU())
-	if c.maxCPU <= 0 {
-		c.maxCPU = runtime.NumCPU()
+	c.maxProcess = cfg.UInt("maxProcess", runtime.NumCPU())
+	if c.maxProcess <= 0 {
+		c.maxProcess = runtime.NumCPU()
 	}
-	c.emptyLineThreshold, _ = cfg.Float64("emptyLineThreshold")
+
+	// Load filters
+	for i := 0; ; i++ {
+		m, err := cfg.Map(fmt.Sprintf("filters.%v", i))
+		if err != nil {
+			break
+		}
+		name, ok := m["name"]
+		if !ok {
+			continue
+		}
+
+		c.addFilterOption(name.(string), m["options"].(map[string]interface{}))
+	}
+}
+
+func (c *Config) addFilterOption(name string, options map[string]interface{}) {
+	var err error
+	var filter limg.Filter
+
+	switch name {
+	case "changeLineSpace":
+		if option, err := limg.NewChangeLineSpaceOption(options); err == nil {
+			filter = limg.NewChangeLineSpaceFilter(*option)
+		}
+	default:
+		log.Printf("Unhandled filter name : %v\n", name)
+	}
+
+	if filter != nil {
+		filterOption := FilterOption{
+			name:   name,
+			filter: filter,
+		}
+		c.filterOptions = append(c.filterOptions, filterOption)
+		fmt.Printf("Filter added : %v\n", name)
+	}
+	if err != nil {
+		log.Printf("Failed to read filter : %v : %v\n", name, err)
+	}
 }
 
 // FormatDestFilename formats destFilename pattern
 func (c *Config) FormatDestFilename(filename string) string {
-	result := strings.Replace(c.destFilename, "${filename}", filename, -1)
+	result := strings.Replace(c.dest.filename, "${filename}", filename, -1)
 	base := strings.ToLower(limg.GetBase(filename))
 	result = strings.Replace(result, "${base}", base, -1)
 	return result
@@ -56,13 +107,13 @@ func (c *Config) FormatDestFilename(filename string) string {
 
 // Print displays configurations
 func (c *Config) Print() {
-	fmt.Printf("srcDir : %v\n", c.srcDir)
-	fmt.Printf("destDir : %v\n", c.destDir)
-	fmt.Printf("destFilename : %v\n", c.destFilename)
-	fmt.Printf("size : (%v, %v)\n", c.width, c.height)
-	fmt.Printf("quality : %v%%\n", c.quality)
-	fmt.Printf("maxCPU : %v\n", c.maxCPU)
-	fmt.Printf("emptyLineThreshold : %v\n", c.emptyLineThreshold)
+	log.Printf("src.dir : %v\n", c.src.dir)
+	log.Printf("dest.dir : %v\n", c.dest.dir)
+	log.Printf("dest.filename : %v\n", c.dest.filename)
+	log.Printf("size : (%v, %v)\n", c.width, c.height)
+	log.Printf("quality : %v%%\n", c.quality)
+	log.Printf("maxProcess : %v\n", c.maxProcess)
+	fmt.Printf("filters : %v\n", len(c.filterOptions))
 }
 
 // NewConfig creates an instance of Config
@@ -73,10 +124,10 @@ func NewConfig(cfgFilename string, srcDir string, destDir string) *Config {
 		cfg.LoadYaml(cfgFilename)
 	}
 	if srcDir != "" {
-		cfg.srcDir = srcDir
+		cfg.src.dir = srcDir
 	}
 	if destDir != "" {
-		cfg.destDir = destDir
+		cfg.dest.dir = destDir
 	}
 
 	return &cfg

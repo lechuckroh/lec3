@@ -116,7 +116,7 @@ func main() {
 	flag.Parse()
 
 	// Print usage
-	if flag.NFlag() == 1 && flag.Arg(1) == "help" {
+	if *cfgFilename == "" || (flag.NFlag() == 1 && flag.Arg(1) == "help") {
 		flag.Usage()
 		return
 	}

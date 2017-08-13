@@ -1,8 +1,22 @@
-srcDir: ./input
-destDir: ./output/koboAuraHD
-destFilename: ${base}.jpg
+src:
+  dir: ./input
+
+dest:
+  dir: ./output/koboAuraHD
+  filename: ${base}.jpg
+
 width: 1080
 height: 1430
 quality: 80
-maxCPU: 0
-emptyLineThreshold: 0.01
+maxProcess: 0
+
+filters:
+  - name: changeLineSpace
+    options:
+      widthRatio: 1080
+      heightRatio: 1430
+      lineSpaceScale: 0.1
+      minSpace: 1
+      maxRemove: 9999
+      threshold: 180
+      emptyLineThreshold: 0.01

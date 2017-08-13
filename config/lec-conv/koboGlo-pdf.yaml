@@ -1,8 +1,22 @@
-srcDir: ./input
-destDir: ./output/koboGlo
-destFilename: ${base}.jpg
+src:
+  dir: ./input
+
+dest:
+  dir: ./output/koboGlo
+  filename: ${base}.jpg
+
 width: 758
 height: 942
 quality: 80
-maxCPU: 0
-emptyLineThreshold: 0.01
+maxProcess: 0
+
+filters:
+  - name: changeLineSpace
+    options:
+      widthRatio: 758
+      heightRatio: 942
+      lineSpaceScale: 0.1
+      minSpace: 1
+      maxRemove: 9999
+      threshold: 180
+      emptyLineThreshold: 0.01

@@ -1,8 +1,22 @@
-srcDir: ./input
-destDir: ./output/k3
-destFilename: ${base}.jpg
+src:
+  dir: ./input
+
+dest:
+  dir: ./output/k3
+  filename: ${base}.jpg
+
 width: 560
 height: 735
 quality: 80
-maxCPU: 0
-emptyLineThreshold: 0.01
+maxProcess: 0
+
+filters:
+  - name: changeLineSpace
+    options:
+      widthRatio: 560
+      heightRatio: 735
+      lineSpaceScale: 0.1
+      minSpace: 1
+      maxRemove: 9999
+      threshold: 180
+      emptyLineThreshold: 0.01
