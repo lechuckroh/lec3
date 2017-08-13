@@ -2,27 +2,15 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"image"
 	"log"
 	"path"
 	"runtime"
 	"sync"
-	"time"
 
-	img "lec/image"
+	limg "lec/image"
+	llog "lec/log"
 )
-
-//-----------------------------------------------------------------------------
-// Log
-//-----------------------------------------------------------------------------
-
-type logWriter struct {
-}
-
-func (writer logWriter) Write(bytes []byte) (int, error) {
-	return fmt.Print(time.Now().Format("15:04:05") + " " + string(bytes))
-}
 
 //-----------------------------------------------------------------------------
 // Work
@@ -46,7 +34,7 @@ func collectImages(workChan chan<- Work, finChan chan<- bool, srcDir string) {
 	}()
 
 	// List image files
-	files, err := img.ListImages(srcDir)
+	files, err := limg.ListImages(srcDir)
 	if err != nil {
 		log.Println(err)
 		return
@@ -63,7 +51,7 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 		wg.Done()
 	}()
 
-	changeLineSpaceFilter := img.NewChangeLineSpaceFilter(img.ChangeLineSpaceOption{
+	changeLineSpaceFilter := limg.NewChangeLineSpaceFilter(limg.ChangeLineSpaceOption{
 		WidthRatio:         float64(config.width),
 		HeightRatio:        float64(config.height),
 		LineSpaceScale:     0.1,
@@ -81,7 +69,7 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 
 		log.Printf("[READ] %v\n", work.filename)
 
-		src, err := img.LoadImage(path.Join(work.dir, work.filename))
+		src, err := limg.LoadImage(path.Join(work.dir, work.filename))
 		if err != nil {
 			log.Printf("Error : %v : %v\n", work.filename, err)
 			continue
@@ -92,17 +80,17 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 		var dest image.Image
 
 		// change line space
-		result := changeLineSpaceFilter.Run(img.NewFilterSource(src, work.filename))
+		result := changeLineSpaceFilter.Run(limg.NewFilterSource(src, work.filename))
 		result.Log()
 		dest = result.Img()
 
 		// resize
-		dest = img.ResizeImage(dest, config.width, config.height)
+		dest = limg.ResizeImage(dest, config.width, config.height)
 
 		// save dest Img
 		// ---------------
 		filename := config.FormatDestFilename(work.filename)
-		err = img.SaveJpeg(dest, config.destDir, filename, 80)
+		err = limg.SaveJpeg(dest, config.destDir, filename, 80)
 		if err != nil {
 			log.Printf("Error : %v : %v\n", filename, err)
 			continue
@@ -111,8 +99,7 @@ func work(worker Worker, config *Config, wg *sync.WaitGroup) {
 }
 
 func main() {
-	log.SetFlags(0)
-	log.SetOutput(new(logWriter))
+	llog.SetLogPattern(llog.TimeOnly)
 
 	cfgFilename := flag.String("cfg", "", "configuration filename")
 	srcDir := flag.String("src", "", "source directory")

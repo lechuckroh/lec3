@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	img "lec/image"
+	limg "lec/image"
 
 	"github.com/olebedev/config"
 )
@@ -49,7 +49,7 @@ func (c *Config) LoadYaml(filename string) {
 // FormatDestFilename formats destFilename pattern
 func (c *Config) FormatDestFilename(filename string) string {
 	result := strings.Replace(c.destFilename, "${filename}", filename, -1)
-	base := strings.ToLower(img.GetBase(filename))
+	base := strings.ToLower(limg.GetBase(filename))
 	result = strings.Replace(result, "${base}", base, -1)
 	return result
 }
