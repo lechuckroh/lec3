@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	img "github.com/lechuckroh/lec3/image"
+	img "core/image"
 )
 
 //-----------------------------------------------------------------------------

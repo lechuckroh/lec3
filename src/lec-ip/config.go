@@ -6,7 +6,7 @@ import (
 	"log"
 	"runtime"
 
-	img "github.com/lechuckroh/lec3/image"
+	img "core/image"
 
 	"github.com/olebedev/config"
 )
