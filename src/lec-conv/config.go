@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	img "core/image"
+	img "lec/image"
 
 	"github.com/olebedev/config"
 )
