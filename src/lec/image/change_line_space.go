@@ -1,9 +1,15 @@
 package image
 
 import (
-	"github.com/mitchellh/mapstructure"
+	"fmt"
 	"image"
 	"image/draw"
+
+	"log"
+
+	"sort"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 // ChangeLineSpaceOption contains options for changeLineSpace filter
@@ -15,6 +21,7 @@ type ChangeLineSpaceOption struct {
 	MaxRemove          int
 	Threshold          uint32
 	EmptyLineThreshold float64
+	DebugMode          bool
 }
 
 func NewChangeLineSpaceOption(m map[string]interface{}) (*ChangeLineSpaceOption, error) {
@@ -64,8 +71,27 @@ func (r *lineRange) calc(scale float64, minHeight, maxRemove int) {
 	}
 }
 
-func (r *lineRange) getReducedHeight() int {
+func (r lineRange) getReducedHeight() int {
 	return r.height - r.targetHeight
+}
+
+func (r lineRange) String() string {
+	return fmt.Sprintf("(%4d-%4d) h:%d, targetH: %d, empty: %v",
+		r.start, r.end, r.height, r.targetHeight, r.emptyLine)
+}
+
+type lineRanges []lineRange
+
+func (r lineRanges) Len() int {
+	return len(r)
+}
+
+// Less sorts in descending order by targetHeight
+func (r lineRanges) Less(i, j int) bool {
+	return r[i].targetHeight > r[j].targetHeight
+}
+func (r lineRanges) Swap(i, j int) {
+	r[i], r[j] = r[j], r[i]
 }
 
 // ----------------------------------------------------------------------------
@@ -83,12 +109,12 @@ func getBrightness(r, g, b uint32) uint32 {
 }
 
 // getLineRanges returns list of text and empty lines
-func (f ChangeLineSpaceFilter) getLineRanges(src image.Image) []lineRange {
+func (f ChangeLineSpaceFilter) getLineRanges(src image.Image) lineRanges {
 	bounds := src.Bounds()
 	srcWidth, srcHeight := bounds.Dx(), bounds.Dy()
 	threshold16 := f.option.Threshold * 256
 
-	var ranges []lineRange
+	var ranges lineRanges
 	var r lineRange
 
 	maxDotCount := int(f.option.EmptyLineThreshold)
@@ -139,21 +165,29 @@ func (f ChangeLineSpaceFilter) getLineRanges(src image.Image) []lineRange {
 	return ranges
 }
 
-func (f ChangeLineSpaceFilter) processLineRanges(ranges []lineRange, width int) int {
+func (f ChangeLineSpaceFilter) processLineRanges(ranges lineRanges, width int) int {
 	targetHeight := 0
-	for i := 0; i < len(ranges); i++ {
+	rangeCount := len(ranges)
+	emptyRangeCount := 0
+	for i := 0; i < rangeCount; i++ {
 		r := &ranges[i]
 		r.calc(f.option.LineSpaceScale, f.option.MinSpace, f.option.MaxRemove)
 		targetHeight += r.targetHeight
+		if r.emptyLine {
+			emptyRangeCount++
+		}
 	}
 
 	minTargetHeight := int(f.option.HeightRatio * float64(width) / f.option.WidthRatio)
+	if f.option.DebugMode {
+		log.Printf("min targetHeight: %v", minTargetHeight)
+	}
 
 	loop := 0
 	maxLoopCount := 5
 	for targetHeight < minTargetHeight && loop < maxLoopCount {
 		totalReducedHeight := 0
-		for i := 0; i < len(ranges); i++ {
+		for i := 0; i < rangeCount; i++ {
 			r := ranges[i]
 			if r.emptyLine {
 				totalReducedHeight += r.getReducedHeight()
@@ -177,16 +211,39 @@ func (f ChangeLineSpaceFilter) processLineRanges(ranges []lineRange, width int) 
 		}
 
 		targetHeight = 0
-		for i := 0; i < len(ranges); i++ {
+		for i := 0; i < rangeCount; i++ {
 			r := &ranges[i]
 			targetHeight += r.targetHeight
 		}
 
+		if f.option.DebugMode {
+			log.Printf("[%d] totalInc=%d, targetHeight=%d", loop, totalInc, targetHeight)
+		}
+
 		loop++
 
-		if totalInc <= int(float32(targetHeight)/100) {
+		if totalInc <= emptyRangeCount {
+			if remainInc := minTargetHeight - targetHeight; remainInc != 0 {
+				sort.Sort(ranges)
+				for i := 0; i < rangeCount && remainInc != 0; i++ {
+					if r := ranges[i]; r.emptyLine {
+						if remainInc > 0 {
+							r.targetHeight++
+							targetHeight++
+							remainInc--
+						} else {
+							r.targetHeight--
+							targetHeight--
+							remainInc++
+						}
+					}
+				}
+			}
 			break
 		}
+	}
+	if f.option.DebugMode {
+		log.Printf("TargetHeight: %v", targetHeight)
 	}
 
 	return targetHeight
