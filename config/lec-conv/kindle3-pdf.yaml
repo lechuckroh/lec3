@@ -3,7 +3,7 @@ src:
 
 dest:
   dir: ./output/k3
-  filename: ${base}.jpg
+  filename: ${dir}.pdf
 
 width: 560
 height: 735
@@ -19,4 +19,4 @@ filters:
       minSpace: 1
       maxRemove: 9999
       threshold: 180
-      emptyLineThreshold: 0.01
+      emptyLineThreshold: 0.001

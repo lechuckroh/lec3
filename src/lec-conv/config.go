@@ -9,6 +9,7 @@ import (
 	limg "lec/image"
 
 	"github.com/olebedev/config"
+	"path"
 )
 
 type SrcOption struct {
@@ -17,6 +18,11 @@ type SrcOption struct {
 type DestOption struct {
 	dir      string
 	filename string
+}
+
+// Format returns extension of filename in lowercase
+func (opt DestOption) Format() string {
+	return limg.GetExt(opt.filename)
 }
 
 type FilterOption struct {
@@ -47,7 +53,7 @@ func (c *Config) LoadYaml(filename string) {
 
 	c.src.dir = cfg.UString("src.dir", "./")
 	c.dest.dir = cfg.UString("dest.dir", "./output")
-	c.dest.filename = cfg.UString("dest.filename", "${base}.jpg")
+	c.dest.filename = cfg.UString("dest.filename", "${dir}")
 	c.width = cfg.UInt("width", -1)
 	c.height = cfg.UInt("height", -1)
 	c.quality = cfg.UInt("quality", 100)
@@ -98,11 +104,9 @@ func (c *Config) addFilterOption(name string, options map[string]interface{}) {
 }
 
 // FormatDestFilename formats destFilename pattern
-func (c *Config) FormatDestFilename(filename string) string {
-	result := strings.Replace(c.dest.filename, "${filename}", filename, -1)
-	base := strings.ToLower(limg.GetBase(filename))
-	result = strings.Replace(result, "${base}", base, -1)
-	return result
+func (c *Config) FormatDestFilename(dirname string) string {
+	base := path.Base(dirname)
+	return strings.Replace(c.dest.filename, "${dir}", base, -1)
 }
 
 // Print displays configurations

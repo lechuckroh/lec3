@@ -3,10 +3,9 @@ package image
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
-
 	"log"
-
 	"sort"
 
 	"github.com/mitchellh/mapstructure"
@@ -224,9 +223,11 @@ func (f ChangeLineSpaceFilter) processLineRanges(ranges lineRanges, width int) i
 
 		if totalInc <= emptyRangeCount {
 			if remainInc := minTargetHeight - targetHeight; remainInc != 0 {
-				sort.Sort(ranges)
+				sortedRanges := make(lineRanges, rangeCount)
+				copy(sortedRanges, ranges)
+				sort.Sort(sortedRanges)
 				for i := 0; i < rangeCount && remainInc != 0; i++ {
-					if r := ranges[i]; r.emptyLine {
+					if r := sortedRanges[i]; r.emptyLine {
 						if remainInc > 0 {
 							r.targetHeight++
 							targetHeight++
@@ -265,7 +266,7 @@ func (f ChangeLineSpaceFilter) run(src image.Image) (image.Image, image.Rectangl
 		targetHeight := f.processLineRanges(ranges, width)
 
 		bounds := image.Rect(0, 0, width, targetHeight)
-		dest := image.NewRGBA(bounds)
+		dest := CreateImage(width, targetHeight, color.White)
 		destY := 0
 		for i := 0; i < rangeCount; i++ {
 			r := &ranges[i]
@@ -280,6 +281,7 @@ func (f ChangeLineSpaceFilter) run(src image.Image) (image.Image, image.Rectangl
 
 				destRect := image.Rect(0, destY, width, targetHeight)
 				draw.Draw(dest, destRect, subImage, image.ZP, draw.Src)
+
 				destY -= rangeHeight - rangeTargetHeight
 			}
 		}

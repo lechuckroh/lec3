@@ -94,7 +94,7 @@ func GetExt(filename string) string {
 	return strings.ToLower(path.Ext(filename))
 }
 
-func GetBase(filename string) string {
+func GetBaseWithoutExt(filename string) string {
 	base := path.Base(filename)
 	return base[:len(base)-len(path.Ext(filename))]
 }

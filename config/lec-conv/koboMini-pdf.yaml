@@ -3,7 +3,7 @@ src:
 
 dest:
   dir: ./output/koboMini
-  filename: ${base}.jpg
+  filename: ${dir}.pdf
 
 width: 600
 height: 730
