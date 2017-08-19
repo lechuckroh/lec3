@@ -1,0 +1,22 @@
+src:
+  dir: ./input
+
+dest:
+  dir: ./output/koboAuraHD
+  filename: ${dir}.pdf
+
+width: 1080
+height: 1320
+quality: 80
+maxProcess: 0
+
+filters:
+  - name: changeLineSpace
+    options:
+      widthRatio: 1080
+      heightRatio: 1320
+      lineSpaceScale: 0.1
+      minSpace: 1
+      maxRemove: 9999
+      threshold: 180
+      emptyLineThreshold: 0.01
