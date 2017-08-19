@@ -1,6 +1,7 @@
 package lecimg
 
 import (
+	"bytes"
 	"errors"
 	"image"
 	"image/color"
@@ -11,6 +12,15 @@ import (
 	"os"
 	"path"
 )
+
+type Changeable interface {
+	Set(x, y int, c color.Color)
+}
+
+func SetColorAt(img image.Image, x, y int, color color.Color) {
+	cImg := img.(Changeable)
+	cImg.Set(x, y, color)
+}
 
 // LoadImage loads image from file.
 func LoadImage(filename string) (image.Image, error) {
@@ -63,6 +73,16 @@ func SaveJpeg(img image.Image, dir string, filename string, quality int) error {
 	}()
 
 	return jpeg.Encode(file, img, &jpeg.Options{Quality: quality})
+}
+
+func ToJpegBytes(img image.Image, quality int) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	err := jpeg.Encode(buf, img, &jpeg.Options{Quality: quality})
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+
 }
 
 // CreateImage creates an image with given size and background color.

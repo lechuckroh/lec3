@@ -37,6 +37,7 @@ type Config struct {
 	width         int
 	height        int
 	quality       int
+	showEdgePoint bool
 	maxProcess    int
 	filterOptions []FilterOption
 }
@@ -57,6 +58,7 @@ func (c *Config) LoadYaml(filename string) {
 	c.width = cfg.UInt("width", -1)
 	c.height = cfg.UInt("height", -1)
 	c.quality = cfg.UInt("quality", 100)
+	c.showEdgePoint = cfg.UBool("showEdgePoint", false)
 	c.maxProcess = cfg.UInt("maxProcess", runtime.NumCPU())
 	if c.maxProcess <= 0 {
 		c.maxProcess = runtime.NumCPU()
@@ -115,6 +117,7 @@ func (c *Config) Print() {
 	log.Printf("dest.dir : %v\n", c.dest.dir)
 	log.Printf("dest.filename : %v\n", c.dest.filename)
 	log.Printf("size : (%v, %v)\n", c.width, c.height)
+	log.Printf("showEdgePoint : %v\n", c.showEdgePoint)
 	log.Printf("quality : %v%%\n", c.quality)
 	log.Printf("maxProcess : %v\n", c.maxProcess)
 	fmt.Printf("filters : %v\n", len(c.filterOptions))

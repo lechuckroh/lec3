@@ -98,19 +98,39 @@ func getDestInfo(config *Config) DestInfo {
 	}
 }
 
-func createPdf(srcDir string, destDir string, filename string, width int, height int) {
-	if err := CreateImagePdf(srcDir, destDir, filename, width, height); err != nil {
+func createPdf(srcDir string,
+	destDir string,
+	filename string,
+	quality int,
+	showEdgePoint bool) {
+
+	opt := PdfOption{
+		Quality:       quality,
+		ShowEdgePoint: showEdgePoint,
+	}
+
+	log.Printf("[WRITE] %s", path.Join(destDir, filename))
+	if err := CreateImagePdf(srcDir, destDir, filename, opt); err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Done.")
 }
 
 func createZip(srcDir string, destDir string, filename string) {
+	log.Printf("[WRITE] %s", path.Join(destDir, filename))
 	if err := CreateImageZip(srcDir, destDir, filename); err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Done.")
 }
 
 func startWorks(config *Config) {
+	exists, _ := lecimg.Exists(config.src.dir)
+	if !exists {
+		log.Printf("Directory not found : %s", config.src.dir)
+		return
+	}
+
 	// set maxProcess
 	runtime.GOMAXPROCS(config.maxProcess)
 
@@ -151,14 +171,11 @@ func startWorks(config *Config) {
 
 	wg.Wait()
 
-	log.Printf("[WRITE] %s", path.Join(config.dest.dir, destInfo.filename))
-
 	// Create output
 	switch destInfo.format {
 	case ".cbz", ".zip":
 		createZip(destInfo.dir, config.dest.dir, destInfo.filename)
 	case ".pdf":
-		createPdf(destInfo.dir, config.dest.dir, destInfo.filename, config.width, config.height)
+		createPdf(destInfo.dir, config.dest.dir, destInfo.filename, config.quality, config.showEdgePoint)
 	}
-	log.Printf("Done.")
 }

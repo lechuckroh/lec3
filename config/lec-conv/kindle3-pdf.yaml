@@ -8,6 +8,7 @@ dest:
 width: 560
 height: 735
 quality: 80
+showEdgePoint: true
 maxProcess: 0
 
 filters:

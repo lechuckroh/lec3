@@ -31,6 +31,7 @@ func isImage(ext string) bool {
 }
 
 // ListImages lists image files in the given directory.
+// Files are sorted by filename in ascending order.
 func ListImages(dir string) ([]os.FileInfo, error) {
 	var result Files
 	files, err := ioutil.ReadDir(dir)
@@ -97,4 +98,15 @@ func GetExt(filename string) string {
 func GetBaseWithoutExt(filename string) string {
 	base := path.Base(filename)
 	return base[:len(base)-len(path.Ext(filename))]
+}
+
+func Exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
 }
