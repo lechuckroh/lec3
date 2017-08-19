@@ -8,8 +8,7 @@ import (
 	"runtime"
 	"sync"
 
-	limg "lec/image"
-
+	"lec/lecimg"
 )
 
 type IWork interface {
@@ -34,13 +33,13 @@ func collectImages(workChan chan<- IWork,
 	finChan chan<- bool,
 	config *Config,
 	destDir string,
-	filters []limg.Filter) {
+	filters []lecimg.Filter) {
 	defer func() {
 		finChan <- true
 	}()
 
 	// List image files
-	files, err := limg.ListImages(config.src.dir)
+	files, err := lecimg.ListImages(config.src.dir)
 	if err != nil {
 		log.Println(err)
 		return
@@ -84,7 +83,7 @@ type DestInfo struct {
 func getDestInfo(config *Config) DestInfo {
 	srcDir := config.src.dir
 	destFilename := config.FormatDestFilename(srcDir)
-	destFormat := limg.GetExt(destFilename)
+	destFormat := lecimg.GetExt(destFilename)
 	destDir := config.dest.dir
 	isTempDir := destFormat != ""
 	if isTempDir {
@@ -121,7 +120,7 @@ func startWorks(config *Config) {
 	wg := sync.WaitGroup{}
 
 	// filters
-	var filters []limg.Filter
+	var filters []lecimg.Filter
 	for _, filterOption := range config.filterOptions {
 		filters = append(filters, filterOption.filter)
 	}

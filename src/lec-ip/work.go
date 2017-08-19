@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	limg "lec/image"
+	"lec/lecimg"
 )
 
 // Work represents a job to do
@@ -36,7 +36,7 @@ func collectImages(workChan chan<- Work, finChan chan<- bool, srcDir string, wat
 
 	for {
 		// List modified image files
-		files, lastCheckTime, err = limg.ListModifiedImages(srcDir, watchDelay, lastCheckTime)
+		files, lastCheckTime, err = lecimg.ListModifiedImages(srcDir, watchDelay, lastCheckTime)
 		if err != nil {
 			log.Println(err)
 			break
@@ -56,7 +56,7 @@ func collectImages(workChan chan<- Work, finChan chan<- bool, srcDir string, wat
 	}
 }
 
-func work(worker Worker, filters []limg.Filter, destDir string, wg *sync.WaitGroup) {
+func work(worker Worker, filters []lecimg.Filter, destDir string, wg *sync.WaitGroup) {
 	defer func() {
 		wg.Done()
 	}()
@@ -69,7 +69,7 @@ func work(worker Worker, filters []limg.Filter, destDir string, wg *sync.WaitGro
 
 		log.Printf("[R] %v\n", work.filename)
 
-		src, err := limg.LoadImage(path.Join(work.dir, work.filename))
+		src, err := lecimg.LoadImage(path.Join(work.dir, work.filename))
 		if err != nil {
 			log.Printf("Error : %v : %v\n", work.filename, err)
 			continue
@@ -78,7 +78,7 @@ func work(worker Worker, filters []limg.Filter, destDir string, wg *sync.WaitGro
 		// run filters
 		var dest image.Image
 		for _, filter := range filters {
-			result := filter.Run(limg.NewFilterSource(src, work.filename))
+			result := filter.Run(lecimg.NewFilterSource(src, work.filename))
 			result.Log()
 
 			resultImg := result.Img()
@@ -92,7 +92,7 @@ func work(worker Worker, filters []limg.Filter, destDir string, wg *sync.WaitGro
 		}
 
 		// save dest Img
-		err = limg.SaveJpeg(dest, destDir, work.filename, 80)
+		err = lecimg.SaveJpeg(dest, destDir, work.filename, 80)
 		if err != nil {
 			log.Printf("Error : %v : %v\n", work.filename, err)
 			continue
@@ -114,7 +114,7 @@ func startWorks(config *Config) {
 	// start collector
 	go collectImages(workChan, finChan, config.src.dir, config.watch, config.watchDelay)
 
-	var filters []limg.Filter
+	var filters []lecimg.Filter
 	for _, filterOption := range config.filterOptions {
 		filters = append(filters, filterOption.filter)
 	}

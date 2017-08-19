@@ -1,4 +1,4 @@
-package image
+package lecimg
 
 import (
 	"image"
@@ -9,10 +9,9 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
-type AutoCropOption struct {
-	Threshold            uint8   // min brightness of space (0~255)
+// AutoCropEDOption contains options for AutoCropEdgeDetection filter.
+type AutoCropEDOption struct {
+	Threshold            uint8   // edge strength threshold (0~255(max edge))
 	MinRatio             float32 // min cropped ratio (height / width)
 	MaxRatio             float32 // max cropped ratio (height / width)
 	MaxWidthCropRate     float32 // max width crop rate (0 <= rate < 1.0)
@@ -32,8 +31,9 @@ type AutoCropOption struct {
 	MaxCropRight         int
 }
 
-func NewAutoCropOption(m map[string]interface{}) (*AutoCropOption, error) {
-	option := AutoCropOption{}
+// NewAutoCropEDOption creates an instance of AutoCropEDOption.
+func NewAutoCropEDOption(m map[string]interface{}) (*AutoCropEDOption, error) {
+	option := AutoCropEDOption{}
 
 	err := mapstructure.Decode(m, &option)
 	if err != nil {
@@ -43,47 +43,69 @@ func NewAutoCropOption(m map[string]interface{}) (*AutoCropOption, error) {
 	return &option, nil
 }
 
-type AutoCropResult struct {
+// AutoCropEDResult contains the result of AutoCropEdgeDetection filter.
+type AutoCropEDResult struct {
 	image image.Image
 	rect  image.Rectangle
 }
 
-func (r AutoCropResult) Img() image.Image {
+// Img returns the result image.
+func (r AutoCropEDResult) Img() image.Image {
 	return r.image
 }
 
-func (r AutoCropResult) Log() {
+// Log prints log message.
+func (r AutoCropEDResult) Log() {
 }
 
-// ----------------------------------------------------------------------------
-// ----------------------------------------------------------------------------
-type AutoCropFilter struct {
-	option AutoCropOption
+// AutoCropEDFilter crops image automatically using EdgeDetection.
+type AutoCropEDFilter struct {
+	edgeDetect *gift.GIFT
+	option     AutoCropEDOption
 }
 
-// Create AutoCropFilter instance
-func NewAutoCropFilter(option AutoCropOption) *AutoCropFilter {
-	return &AutoCropFilter{option: option}
+// NewAutoCropEDFilter creates an instance of AutoCropEDFilter.
+func NewAutoCropEDFilter(option AutoCropEDOption) *AutoCropEDFilter {
+	edgeDetect := gift.New(
+		gift.Convolution(
+			[]float32{
+				-1, -1, -1,
+				-1, 8, -1,
+				-1, -1, -1,
+			},
+			false, false, false, 0.0,
+		))
+	return &AutoCropEDFilter{
+		edgeDetect: edgeDetect,
+		option:     option,
+	}
 }
 
-// Implements Filter.Run()
-func (f AutoCropFilter) Run(s *FilterSource) FilterResult {
+// Run processes an image
+func (f AutoCropEDFilter) Run(s *FilterSource) FilterResult {
 	img, rect := f.run(s.image)
-	return AutoCropResult{img, rect}
+	return AutoCropEDResult{img, rect}
 }
 
 // actual autoCrop implementation
-func (f AutoCropFilter) run(src image.Image) (image.Image, image.Rectangle) {
+func (f AutoCropEDFilter) run(src image.Image) (image.Image, image.Rectangle) {
 	bounds := src.Bounds()
 	o := f.option
+
+	// Edge Detect
+	edgeDetected := image.NewGray(bounds)
+	f.edgeDetect.Draw(edgeDetected, src)
+
+	//	SaveJpeg(src, "./", "autoCropSrc.jpg", 80)
+	//	SaveJpeg(edgeDetected, "./", "autoCropED.jpg", 80)
 
 	// calculate boundary
 	width, height := bounds.Dx(), bounds.Dy()
 
-	top := f.findTopEdge(src, width, height)
-	bottom := f.findBottomEdge(src, width, height, top)
-	left := f.findLeftEdge(src, width, height, top, bottom)
-	right := f.findRightEdge(src, width, height, top, bottom, left)
+	top := f.findTopEdge(edgeDetected, width, height) + 1
+	bottom := f.findBottomEdge(edgeDetected, width, height, top)
+	left := f.findLeftEdge(edgeDetected, width, height, top, bottom) + 1
+	right := f.findRightEdge(edgeDetected, width, height, top, bottom, left)
 
 	// maxCrop
 	disableMaxCrop := o.MaxCropTop == 0 &&
@@ -107,27 +129,34 @@ func (f AutoCropFilter) run(src image.Image) (image.Image, image.Rectangle) {
 
 	// crop image
 	if top > 0 || left > 0 || right+1 < width || bottom+1 < height {
-		cropRect := GetCropRect(left, top, right+1, bottom+1, bounds, o.MaxWidthCropRate, o.MaxHeightCropRate, o.MinRatio, o.MaxRatio)
+		cropRect := GetCropRect(left,
+			top,
+			right+1,
+			bottom+1,
+			bounds,
+			o.MaxWidthCropRate,
+			o.MaxHeightCropRate,
+			o.MinRatio,
+			o.MaxRatio)
 		dest := image.NewRGBA(cropRect)
 		draw.Draw(dest, dest.Bounds(), &image.Uniform{color.White}, image.ZP, draw.Src)
 		crop := gift.New(gift.Crop(cropRect))
 		crop.Draw(dest, src)
 		return dest, cropRect
-	} else {
-		return src, bounds
 	}
+	return src, bounds
 }
 
 // Find top edge. 0 <= threshold <= 0xffff
-func (f AutoCropFilter) findTopEdge(image image.Image, width, height int) int {
-	thresholdSum := uint32(f.option.Threshold) * 256 * 3
+func (f AutoCropEDFilter) findTopEdge(image *image.Gray, width, height int) int {
+	threshold := uint32(f.option.Threshold) * 256
 	yEnd := height - f.option.PaddingBottom
 	xEnd := width - f.option.PaddingRight
 	maxDotCount := f.option.EmptyLineMaxDotCount
 	for y := f.option.PaddingTop; y < yEnd; y++ {
 		dotCount := 0
 		for x := f.option.PaddingLeft; x < xEnd; x++ {
-			if r, g, b, _ := image.At(x, y).RGBA(); (r + g + b) < thresholdSum {
+			if r, _, _, _ := image.At(x, y).RGBA(); r > threshold {
 				dotCount++
 				if dotCount > maxDotCount {
 					return Max(0, y-f.option.MarginTop)
@@ -139,17 +168,17 @@ func (f AutoCropFilter) findTopEdge(image image.Image, width, height int) int {
 }
 
 // Find bottom edge. 0 <= threshold <= 0xffff
-func (f AutoCropFilter) findBottomEdge(image image.Image, width, height, top int) int {
-	thresholdSum := uint32(f.option.Threshold) * 256 * 3
+func (f AutoCropEDFilter) findBottomEdge(image *image.Gray, width, height, top int) int {
+	threshold := uint32(f.option.Threshold) * 256
 	xEnd := width - f.option.PaddingRight
 	maxDotCount := f.option.EmptyLineMaxDotCount
 	for y := height - f.option.PaddingBottom - 1; y > top; y-- {
 		dotCount := 0
 		for x := f.option.PaddingLeft; x < xEnd; x++ {
-			if r, g, b, _ := image.At(x, y).RGBA(); (r + g + b) < thresholdSum {
+			if r, _, _, _ := image.At(x, y).RGBA(); r > threshold {
 				dotCount++
 				if dotCount > maxDotCount {
-					return Min(height-1, y+f.option.MarginBottom)
+					return Min(height-1, y-1+f.option.MarginBottom)
 				}
 			}
 		}
@@ -158,15 +187,15 @@ func (f AutoCropFilter) findBottomEdge(image image.Image, width, height, top int
 }
 
 // Find left edge. 0 <= threshold <= 0xffff
-func (f AutoCropFilter) findLeftEdge(image image.Image, width, height, top, bottom int) int {
-	thresholdSum := uint32(f.option.Threshold) * 256 * 3
+func (f AutoCropEDFilter) findLeftEdge(image *image.Gray, width, height, top, bottom int) int {
+	threshold := uint32(f.option.Threshold) * 256
 	yEnd := height - f.option.PaddingBottom
 	xEnd := width - f.option.PaddingRight
 	maxDotCount := f.option.EmptyLineMaxDotCount
 	for x := f.option.PaddingLeft; x < xEnd; x++ {
 		dotCount := 0
 		for y := top + 1; y < yEnd; y++ {
-			if r, g, b, _ := image.At(x, y).RGBA(); (r + g + b) < thresholdSum {
+			if r, _, _, _ := image.At(x, y).RGBA(); r > threshold {
 				dotCount++
 				if dotCount > maxDotCount {
 					return Max(0, x-f.option.MarginLeft)
@@ -178,16 +207,16 @@ func (f AutoCropFilter) findLeftEdge(image image.Image, width, height, top, bott
 }
 
 // Find right edge. 0 <= threshold <= 0xffff
-func (f AutoCropFilter) findRightEdge(image image.Image, width, height, top, bottom, left int) int {
-	thresholdSum := uint32(f.option.Threshold) * 256 * 3
+func (f AutoCropEDFilter) findRightEdge(image *image.Gray, width, height, top, bottom, left int) int {
+	threshold := uint32(f.option.Threshold) * 256
 	maxDotCount := f.option.EmptyLineMaxDotCount
 	for x := width - f.option.PaddingRight - 1; x > left; x-- {
 		dotCount := 0
 		for y := top + 1; y < bottom; y++ {
-			if r, g, b, _ := image.At(x, y).RGBA(); (r + g + b) < thresholdSum {
+			if r, _, _, _ := image.At(x, y).RGBA(); r > threshold {
 				dotCount++
 				if dotCount > maxDotCount {
-					return Min(width-1, x+f.option.MarginRight)
+					return Min(width-1, x-1+f.option.MarginRight)
 				}
 			}
 		}

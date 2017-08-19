@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	limg "lec/image"
+	"lec/lecimg"
 )
 
 type FilterWork struct {
@@ -16,13 +16,13 @@ type FilterWork struct {
 	destDir  string
 	width    int
 	height   int
-	filters  []limg.Filter
+	filters  []lecimg.Filter
 }
 
 func (w FilterWork) Run() bool {
 	log.Printf("[READ] %v\n", w.filename)
 
-	src, err := limg.LoadImage(path.Join(w.srcDir, w.filename))
+	src, err := lecimg.LoadImage(path.Join(w.srcDir, w.filename))
 	if err != nil {
 		log.Printf("Error : %v : %v\n", w.filename, err)
 		return false
@@ -31,7 +31,7 @@ func (w FilterWork) Run() bool {
 	// run filters
 	var dest image.Image
 	for _, filter := range w.filters {
-		result := filter.Run(limg.NewFilterSource(src, w.filename))
+		result := filter.Run(lecimg.NewFilterSource(src, w.filename))
 		result.Log()
 
 		resultImg := result.Img()
@@ -45,11 +45,11 @@ func (w FilterWork) Run() bool {
 	}
 
 	// resize
-	dest = limg.ResizeImage(dest, w.width, w.height)
+	dest = lecimg.ResizeImage(dest, w.width, w.height)
 
 	// save dest Image
-	filename := strings.ToLower(limg.GetBaseWithoutExt(w.filename)) + ".jpg"
-	err = limg.SaveJpeg(dest, w.destDir, filename, 80)
+	filename := strings.ToLower(lecimg.GetBaseWithoutExt(w.filename)) + ".jpg"
+	err = lecimg.SaveJpeg(dest, w.destDir, filename, 80)
 	if err != nil {
 		log.Printf("Error : %v : %v\n", filename, err)
 		return false

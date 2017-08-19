@@ -6,11 +6,11 @@ import (
 	"os"
 	"path"
 
-	limg "lec/image"
+	"lec/lecimg"
 )
 
 func CreateImageZip(srcDir string, destDir string, filename string) error {
-	files, err := limg.ListImages(srcDir)
+	files, err := lecimg.ListImages(srcDir)
 	if err != nil {
 		return err
 	}

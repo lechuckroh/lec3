@@ -3,7 +3,7 @@ package main
 import (
 	"path"
 
-	limg "lec/image"
+	"lec/lecimg"
 
 	"github.com/signintech/gopdf"
 )
@@ -17,7 +17,7 @@ func CreateImagePdf(srcDir string,
 	filename string,
 	width int,
 	height int) error {
-	files, err := limg.ListImages(srcDir)
+	files, err := lecimg.ListImages(srcDir)
 	if err != nil {
 		return err
 	}

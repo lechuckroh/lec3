@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"path"
 	"runtime"
 	"strings"
 
-	limg "lec/image"
+	"lec/lecimg"
 
 	"github.com/olebedev/config"
-	"path"
 )
 
 type SrcOption struct {
@@ -22,12 +22,12 @@ type DestOption struct {
 
 // Format returns extension of filename in lowercase
 func (opt DestOption) Format() string {
-	return limg.GetExt(opt.filename)
+	return lecimg.GetExt(opt.filename)
 }
 
 type FilterOption struct {
 	name   string
-	filter limg.Filter
+	filter lecimg.Filter
 }
 
 // Config defines configuration
@@ -79,12 +79,12 @@ func (c *Config) LoadYaml(filename string) {
 
 func (c *Config) addFilterOption(name string, options map[string]interface{}) {
 	var err error
-	var filter limg.Filter
+	var filter lecimg.Filter
 
 	switch name {
 	case "changeLineSpace":
-		if option, err := limg.NewChangeLineSpaceOption(options); err == nil {
-			filter = limg.NewChangeLineSpaceFilter(*option)
+		if option, err := lecimg.NewChangeLineSpaceOption(options); err == nil {
+			filter = lecimg.NewChangeLineSpaceFilter(*option)
 		}
 	default:
 		log.Printf("Unhandled filter name : %v\n", name)

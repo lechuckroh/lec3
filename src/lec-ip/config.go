@@ -6,7 +6,7 @@ import (
 	"log"
 	"runtime"
 
-	limg "lec/image"
+	"lec/lecimg"
 
 	"github.com/olebedev/config"
 )
@@ -21,7 +21,7 @@ type DestOption struct {
 
 type FilterOption struct {
 	name   string
-	filter limg.Filter
+	filter lecimg.Filter
 }
 
 type Config struct {
@@ -69,24 +69,24 @@ func (c *Config) LoadYaml(filename string) {
 
 func (c *Config) addFilterOption(name string, options map[string]interface{}) {
 	var err error
-	var filter limg.Filter
+	var filter lecimg.Filter
 
 	switch name {
 	case "deskew":
-		if option, err := limg.NewDeskewOption(options); err == nil {
-			filter = limg.NewDeskewFilter(*option)
+		if option, err := lecimg.NewDeskewOption(options); err == nil {
+			filter = lecimg.NewDeskewFilter(*option)
 		}
 	case "deskewED":
-		if option, err := limg.NewDeskewEDOption(options); err == nil {
-			filter = limg.NewDeskewEDFilter(*option)
+		if option, err := lecimg.NewDeskewEDOption(options); err == nil {
+			filter = lecimg.NewDeskewEDFilter(*option)
 		}
 	case "autoCrop":
-		if option, err := limg.NewAutoCropOption(options); err == nil {
-			filter = limg.NewAutoCropFilter(*option)
+		if option, err := lecimg.NewAutoCropOption(options); err == nil {
+			filter = lecimg.NewAutoCropFilter(*option)
 		}
 	case "autoCropED":
-		if option, err := limg.NewAutoCropEDOption(options); err == nil {
-			filter = limg.NewAutoCropEDFilter(*option)
+		if option, err := lecimg.NewAutoCropEDOption(options); err == nil {
+			filter = lecimg.NewAutoCropEDFilter(*option)
 		}
 	default:
 		log.Printf("Unhandled filter name : %v\n", name)

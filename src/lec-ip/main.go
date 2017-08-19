@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	llog "lec/log"
+	"lec/leclog"
 )
 
 func getConfig() *Config {
@@ -23,7 +23,7 @@ func getConfig() *Config {
 }
 
 func main() {
-	llog.SetLogPattern(llog.TimeOnly)
+	leclog.SetLogPattern(leclog.TimeOnly)
 
 	config := getConfig()
 	if config == nil || (flag.NFlag() == 1 && flag.Arg(1) == "help") {
