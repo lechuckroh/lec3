@@ -1,7 +1,6 @@
 package main
 
 import (
-	"archive/zip"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,7 +10,6 @@ import (
 
 	limg "lec/image"
 
-	"github.com/signintech/gopdf"
 )
 
 type IWork interface {
@@ -102,57 +100,14 @@ func getDestInfo(config *Config) DestInfo {
 }
 
 func createPdf(srcDir string, destDir string, filename string, width int, height int) {
-	files, err := limg.ListImages(srcDir)
-	if err != nil {
+	if err := CreateImagePdf(srcDir, destDir, filename, width, height); err != nil {
 		log.Fatal(err)
 	}
-
-	pdf := gopdf.GoPdf{}
-	rect := gopdf.Rect{
-		W: float64(width),
-		H: float64(height),
-	}
-	pdf.Start(gopdf.Config{Unit: "pt", PageSize: rect})
-
-	for _, file := range files {
-		pdf.AddPage()
-		// TODO: keep aspect ratio
-		pdf.Image(path.Join(srcDir, file.Name()), 0, 0, &rect)
-	}
-
-	pdf.WritePdf(path.Join(destDir, filename))
 }
 
 func createZip(srcDir string, destDir string, filename string) {
-	files, err := limg.ListImages(srcDir)
-	if err != nil {
+	if err := CreateImageZip(srcDir, destDir, filename); err != nil {
 		log.Fatal(err)
-	}
-
-	newFile, err := os.Create(path.Join(destDir, filename))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer newFile.Close()
-
-	zipWriter := zip.NewWriter(newFile)
-	defer zipWriter.Close()
-
-	for _, file := range files {
-		data, err := ioutil.ReadFile(path.Join(srcDir, file.Name()))
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		f, err := zipWriter.Create(file.Name())
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		_, err = f.Write(data)
-		if err != nil {
-			log.Fatal(err)
-		}
 	}
 }
 
