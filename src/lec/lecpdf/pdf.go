@@ -4,10 +4,11 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"path"
 	"time"
 
 	"lec/lecimg"
+
+	"path/filepath"
 
 	"github.com/signintech/gopdf"
 )
@@ -33,7 +34,7 @@ func CreateImagePdf(srcDir string, destDir string, filename string, opt PdfOptio
 	pdf.Start(gopdf.Config{})
 
 	for _, file := range files {
-		img, err := lecimg.LoadImage(path.Join(srcDir, file.Name()))
+		img, err := lecimg.LoadImage(filepath.Join(srcDir, file.Name()))
 		if err != nil {
 			return err
 		}
@@ -79,6 +80,6 @@ func CreateImagePdf(srcDir string, destDir string, filename string, opt PdfOptio
 		CreationDate: time.Now(),
 	})
 
-	pdf.WritePdf(path.Join(destDir, filename))
+	pdf.WritePdf(filepath.Join(destDir, filename))
 	return nil
 }

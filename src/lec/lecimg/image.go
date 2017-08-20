@@ -10,7 +10,7 @@ import (
 	"image/png"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 
 	"lec/lecio"
 )
@@ -66,7 +66,7 @@ func SaveJpeg(img image.Image, dir string, filename string, quality int) error {
 		return err
 	}
 
-	file, err := os.Create(path.Join(dir, filename))
+	file, err := os.Create(filepath.Join(dir, filename))
 	if err != nil {
 		return err
 	}

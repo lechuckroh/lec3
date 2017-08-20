@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 
 	"lec/lecimg"
@@ -17,7 +16,7 @@ func CreateImageZip(srcDir string, destDir string, filename string) error {
 		return err
 	}
 
-	newFile, err := os.Create(path.Join(destDir, filename))
+	newFile, err := os.Create(filepath.Join(destDir, filename))
 	if err != nil {
 		return err
 	}
@@ -27,7 +26,7 @@ func CreateImageZip(srcDir string, destDir string, filename string) error {
 	defer zipWriter.Close()
 
 	for _, file := range files {
-		data, err := ioutil.ReadFile(path.Join(srcDir, file.Name()))
+		data, err := ioutil.ReadFile(filepath.Join(srcDir, file.Name()))
 		if err != nil {
 			return err
 		}

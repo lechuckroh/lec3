@@ -2,7 +2,6 @@ package lecio
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -23,12 +22,12 @@ func (files Files) Swap(i, j int) {
 }
 
 func GetExt(filename string) string {
-	return strings.ToLower(path.Ext(filename))
+	return strings.ToLower(filepath.Ext(filename))
 }
 
 func GetBaseWithoutExt(filename string) string {
 	base := filepath.Base(filename)
-	return base[:len(base)-len(path.Ext(filename))]
+	return base[:len(base)-len(filepath.Ext(filename))]
 }
 
 func Exists(path string) (bool, error) {
