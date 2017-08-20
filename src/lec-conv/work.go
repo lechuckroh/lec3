@@ -44,6 +44,19 @@ func collectImages(workChan chan<- IWork,
 		log.Fatal(err)
 	}
 
+	addWork := func(dir string, filename string, removeSrc bool) {
+		workChan <- FilterWork{
+			srcDir:    dir,
+			filename:  filename,
+			destDir:   destDir,
+			width:     config.width,
+			height:    config.height,
+			filters:   filters,
+			removeSrc: removeSrc,
+		}
+	}
+
+	// Add works for the images in the 'dir' directory.
 	addImageWorks := func(dir string, removeSrc bool) {
 		// List image files
 		files, err := lecimg.ListImages(dir)
@@ -53,15 +66,7 @@ func collectImages(workChan chan<- IWork,
 
 		// add works
 		for _, file := range files {
-			workChan <- FilterWork{
-				srcDir:    dir,
-				filename:  file.Name(),
-				destDir:   destDir,
-				width:     config.width,
-				height:    config.height,
-				filters:   filters,
-				removeSrc: removeSrc,
-			}
+			addWork(dir, file.Name(), removeSrc)
 		}
 	}
 
@@ -69,14 +74,18 @@ func collectImages(workChan chan<- IWork,
 		addImageWorks(srcFilename, false)
 	} else {
 		ext := lecimg.GetExt(srcFilename)
-		if ext == ".zip" {
+		if ext == ".zip" || ext == ".cbz" {
 			os.MkdirAll(destDir, os.ModePerm)
 			extractDir, _ := ioutil.TempDir(destDir, "_temp_")
-			log.Printf(extractDir)
-			if err := Unzip(srcFilename, extractDir); err != nil {
+
+			callback := func(dir, filename string) {
+				addWork(extractDir, filename, true)
+			}
+
+			if err := Unzip(srcFilename, extractDir, callback); err != nil {
 				log.Fatal(err)
 			}
-			addImageWorks(extractDir, true)
+			//addImageWorks(extractDir, true)
 		}
 	}
 }

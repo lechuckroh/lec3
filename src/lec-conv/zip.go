@@ -45,7 +45,9 @@ func CreateImageZip(srcDir string, destDir string, filename string) error {
 	return nil
 }
 
-func Unzip(src, dest string) error {
+type UnzipCallback func(dir, filename string)
+
+func Unzip(src, dest string, callback UnzipCallback) error {
 	r, err := zip.OpenReader(src)
 	if err != nil {
 		return err
@@ -89,6 +91,10 @@ func Unzip(src, dest string) error {
 			_, err = io.Copy(f, rc)
 			if err != nil {
 				return err
+			}
+
+			if callback != nil {
+				callback(dest, filepath.Base(f.Name()))
 			}
 		}
 		return nil
