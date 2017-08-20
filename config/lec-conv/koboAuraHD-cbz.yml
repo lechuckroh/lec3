@@ -3,7 +3,7 @@ src:
 
 dest:
   dir: ./output/koboAuraHD
-  filename: ${dir}.cbz
+  filename: ${baseFilename}.cbz
 
 width: 1080
 height: 1430

@@ -3,7 +3,7 @@ src:
 
 dest:
   dir: ./output/koboAuraHD
-  filename: ${dir}.pdf
+  filename: ${baseFilename}.pdf
 
 width: 1080
 height: 1320

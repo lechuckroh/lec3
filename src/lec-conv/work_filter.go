@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 	"log"
+	"os"
 	"path"
 	"reflect"
 	"strings"
@@ -11,18 +12,20 @@ import (
 )
 
 type FilterWork struct {
-	srcDir   string
-	filename string
-	destDir  string
-	width    int
-	height   int
-	filters  []lecimg.Filter
+	srcDir    string
+	filename  string
+	destDir   string
+	width     int
+	height    int
+	filters   []lecimg.Filter
+	removeSrc bool
 }
 
 func (w FilterWork) Run() bool {
 	log.Printf("[READ] %v\n", w.filename)
 
-	src, err := lecimg.LoadImage(path.Join(w.srcDir, w.filename))
+	srcPath := path.Join(w.srcDir, w.filename)
+	src, err := lecimg.LoadImage(srcPath)
 	if err != nil {
 		log.Printf("Error : %v : %v\n", w.filename, err)
 		return false
@@ -53,6 +56,10 @@ func (w FilterWork) Run() bool {
 	if err != nil {
 		log.Printf("Error : %v : %v\n", filename, err)
 		return false
+	}
+
+	if w.removeSrc {
+		os.Remove(srcPath)
 	}
 
 	return true

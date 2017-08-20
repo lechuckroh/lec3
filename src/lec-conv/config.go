@@ -13,7 +13,7 @@ import (
 )
 
 type SrcOption struct {
-	dir string
+	filename string
 }
 type DestOption struct {
 	dir      string
@@ -52,9 +52,9 @@ func (c *Config) LoadYaml(filename string) {
 
 	log.Printf("Load: %v\n", filename)
 
-	c.src.dir = cfg.UString("src.dir", "./")
+	c.src.filename = cfg.UString("src.filename", "./")
 	c.dest.dir = cfg.UString("dest.dir", "./output")
-	c.dest.filename = cfg.UString("dest.filename", "${dir}")
+	c.dest.filename = cfg.UString("dest.filename", "${filename}")
 	c.width = cfg.UInt("width", -1)
 	c.height = cfg.UInt("height", -1)
 	c.quality = cfg.UInt("quality", 100)
@@ -107,13 +107,19 @@ func (c *Config) addFilterOption(name string, options map[string]interface{}) {
 
 // FormatDestFilename formats destFilename pattern
 func (c *Config) FormatDestFilename(dirname string) string {
+	result := c.dest.filename
+
 	base := path.Base(dirname)
-	return strings.Replace(c.dest.filename, "${dir}", base, -1)
+	result = strings.Replace(result, "${filename}", base, -1)
+
+	baseFilename := lecimg.GetBaseWithoutExt(base)
+	result = strings.Replace(result, "${baseFilename}", baseFilename, -1)
+	return result
 }
 
 // Print displays configurations
 func (c *Config) Print() {
-	log.Printf("src.dir : %v\n", c.src.dir)
+	log.Printf("src.filename : %v\n", c.src.filename)
 	log.Printf("dest.dir : %v\n", c.dest.dir)
 	log.Printf("dest.filename : %v\n", c.dest.filename)
 	log.Printf("size : (%v, %v)\n", c.width, c.height)
@@ -131,7 +137,7 @@ func NewConfig(cfgFilename string, srcDir string, destDir string) *Config {
 		cfg.LoadYaml(cfgFilename)
 	}
 	if srcDir != "" {
-		cfg.src.dir = srcDir
+		cfg.src.filename = srcDir
 	}
 	if destDir != "" {
 		cfg.dest.dir = destDir

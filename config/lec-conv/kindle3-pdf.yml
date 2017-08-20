@@ -3,7 +3,7 @@ src:
 
 dest:
   dir: ./output/k3
-  filename: ${dir}.pdf
+  filename: ${baseFilename}.pdf
 
 width: 560
 height: 735

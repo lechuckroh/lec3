@@ -38,22 +38,45 @@ func collectImages(workChan chan<- IWork,
 		finChan <- true
 	}()
 
-	// List image files
-	files, err := lecimg.ListImages(config.src.dir)
+	srcFilename := config.src.filename
+	srcFileInfo, err := os.Stat(srcFilename)
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
 
-	// add works
-	for _, file := range files {
-		workChan <- FilterWork{
-			srcDir:   config.src.dir,
-			filename: file.Name(),
-			destDir:  destDir,
-			width:    config.width,
-			height:   config.height,
-			filters:  filters,
+	addImageWorks := func(dir string, removeSrc bool) {
+		// List image files
+		files, err := lecimg.ListImages(dir)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// add works
+		for _, file := range files {
+			workChan <- FilterWork{
+				srcDir:    dir,
+				filename:  file.Name(),
+				destDir:   destDir,
+				width:     config.width,
+				height:    config.height,
+				filters:   filters,
+				removeSrc: removeSrc,
+			}
+		}
+	}
+
+	if srcFileInfo.IsDir() {
+		addImageWorks(srcFilename, false)
+	} else {
+		ext := lecimg.GetExt(srcFilename)
+		if ext == ".zip" {
+			os.MkdirAll(destDir, os.ModePerm)
+			extractDir, _ := ioutil.TempDir(destDir, "_temp_")
+			log.Printf(extractDir)
+			if err := Unzip(srcFilename, extractDir); err != nil {
+				log.Fatal(err)
+			}
+			addImageWorks(extractDir, true)
 		}
 	}
 }
@@ -81,8 +104,8 @@ type DestDirInfo struct {
 }
 
 func getDestDirInfo(config *Config) DestDirInfo {
-	srcDir := config.src.dir
-	destFilename := config.FormatDestFilename(srcDir)
+	srcFilename := config.src.filename
+	destFilename := config.FormatDestFilename(srcFilename)
 	destFormat := lecimg.GetExt(destFilename)
 	destDir := config.dest.dir
 	isTempDir := destFormat != ""
@@ -128,10 +151,10 @@ func createZip(srcDir string, destDir string, filename string) {
 }
 
 func startWorks(config *Config) {
-	srcDir := config.src.dir
-	exists, _ := lecimg.Exists(srcDir)
+	srcFilename := config.src.filename
+	exists, _ := lecimg.Exists(srcFilename)
 	if !exists {
-		log.Printf("Directory not found : %s", srcDir)
+		log.Printf("File not found : %s", srcFilename)
 		return
 	}
 
@@ -182,7 +205,7 @@ func startWorks(config *Config) {
 			config.dest.dir,
 			destInfo.filename)
 	case ".pdf":
-		metaData := GetMetaData(path.Base(srcDir))
+		metaData := GetMetaData(path.Base(srcFilename))
 		createPdf(destInfo.dir,
 			config.dest.dir,
 			destInfo.filename,

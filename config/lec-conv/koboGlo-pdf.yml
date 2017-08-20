@@ -3,7 +3,7 @@ src:
 
 dest:
   dir: ./output/koboGlo
-  filename: ${dir}.pdf
+  filename: ${baseFilename}.pdf
 
 width: 758
 height: 942
