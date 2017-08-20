@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"image/draw"
 	"path"
+	"time"
 
 	"lec/lecimg"
 
@@ -12,6 +13,8 @@ import (
 )
 
 type PdfOption struct {
+	Title         string
+	Author        string
 	Quality       int
 	ShowEdgePoint bool
 }
@@ -67,6 +70,14 @@ func CreateImagePdf(srcDir string, destDir string, filename string, opt PdfOptio
 		}
 		pdf.ImageByHolder(imgHolder, 0, 0, nil)
 	}
+
+	// MetaData
+	pdf.SetInfo(gopdf.PdfInfo{
+		Title:        opt.Title,
+		Author:       opt.Author,
+		Creator:      "lec-conv",
+		CreationDate: time.Now(),
+	})
 
 	pdf.WritePdf(path.Join(destDir, filename))
 	return nil

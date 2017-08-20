@@ -73,14 +73,14 @@ func processWorks(worker Worker, wg *sync.WaitGroup) {
 	}
 }
 
-type DestInfo struct {
+type DestDirInfo struct {
 	dir      string
 	filename string
 	format   string
 	temp     bool
 }
 
-func getDestInfo(config *Config) DestInfo {
+func getDestDirInfo(config *Config) DestDirInfo {
 	srcDir := config.src.dir
 	destFilename := config.FormatDestFilename(srcDir)
 	destFormat := lecimg.GetExt(destFilename)
@@ -90,7 +90,7 @@ func getDestInfo(config *Config) DestInfo {
 		os.MkdirAll(destDir, os.ModePerm)
 		destDir, _ = ioutil.TempDir(destDir, "_temp_")
 	}
-	return DestInfo{
+	return DestDirInfo{
 		dir:      destDir,
 		filename: destFilename,
 		format:   destFormat,
@@ -101,10 +101,13 @@ func getDestInfo(config *Config) DestInfo {
 func createPdf(srcDir string,
 	destDir string,
 	filename string,
+	metaData MetaData,
 	quality int,
 	showEdgePoint bool) {
 
 	opt := PdfOption{
+		Title:         metaData.Title,
+		Author:        metaData.Author,
 		Quality:       quality,
 		ShowEdgePoint: showEdgePoint,
 	}
@@ -125,9 +128,10 @@ func createZip(srcDir string, destDir string, filename string) {
 }
 
 func startWorks(config *Config) {
-	exists, _ := lecimg.Exists(config.src.dir)
+	srcDir := config.src.dir
+	exists, _ := lecimg.Exists(srcDir)
 	if !exists {
-		log.Printf("Directory not found : %s", config.src.dir)
+		log.Printf("Directory not found : %s", srcDir)
 		return
 	}
 
@@ -146,7 +150,7 @@ func startWorks(config *Config) {
 	}
 
 	// Destination information
-	destInfo := getDestInfo(config)
+	destInfo := getDestDirInfo(config)
 	if destInfo.temp {
 		defer os.RemoveAll(destInfo.dir)
 	}
@@ -174,8 +178,16 @@ func startWorks(config *Config) {
 	// Create output
 	switch destInfo.format {
 	case ".cbz", ".zip":
-		createZip(destInfo.dir, config.dest.dir, destInfo.filename)
+		createZip(destInfo.dir,
+			config.dest.dir,
+			destInfo.filename)
 	case ".pdf":
-		createPdf(destInfo.dir, config.dest.dir, destInfo.filename, config.quality, config.showEdgePoint)
+		metaData := GetMetaData(path.Base(srcDir))
+		createPdf(destInfo.dir,
+			config.dest.dir,
+			destInfo.filename,
+			metaData,
+			config.quality,
+			config.showEdgePoint)
 	}
 }
