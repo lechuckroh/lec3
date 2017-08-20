@@ -4,27 +4,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	"lec/lecio"
 )
-
-// Files is FileInfo array
-type Files []os.FileInfo
-
-func (files Files) Len() int {
-	return len(files)
-}
-
-func (files Files) Less(i, j int) bool {
-	return files[i].Name() < files[j].Name()
-}
-
-func (files Files) Swap(i, j int) {
-	files[i], files[j] = files[j], files[i]
-}
 
 func isImage(ext string) bool {
 	return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif"
@@ -33,7 +19,7 @@ func isImage(ext string) bool {
 // ListImages lists image files in the given directory.
 // Files are sorted by filename in ascending order.
 func ListImages(dir string) ([]os.FileInfo, error) {
-	var result Files
+	var result lecio.Files
 	files, err := ioutil.ReadDir(dir)
 
 	// Failed to read directory
@@ -63,7 +49,7 @@ func ListModifiedImages(dir string, watchDelay int, lastCheckTime time.Time) ([]
 	}
 	listBefore := now.Add(duration)
 
-	var result Files
+	var result lecio.Files
 	files, err := ioutil.ReadDir(dir)
 
 	// Failed to read directory
@@ -89,24 +75,4 @@ func ListModifiedImages(dir string, watchDelay int, lastCheckTime time.Time) ([]
 	}
 
 	return result, lastCheckTime, nil
-}
-
-func GetExt(filename string) string {
-	return strings.ToLower(path.Ext(filename))
-}
-
-func GetBaseWithoutExt(filename string) string {
-	base := filepath.Base(filename)
-	return base[:len(base)-len(path.Ext(filename))]
-}
-
-func Exists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return true, err
 }

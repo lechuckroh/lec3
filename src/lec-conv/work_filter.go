@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"lec/lecimg"
+	"lec/lecio"
 )
 
 type FilterWork struct {
@@ -51,7 +52,7 @@ func (w FilterWork) Run() bool {
 	dest = lecimg.ResizeImage(dest, w.width, w.height)
 
 	// save dest Image
-	filename := strings.ToLower(lecimg.GetBaseWithoutExt(w.filename)) + ".jpg"
+	filename := strings.ToLower(lecio.GetBaseWithoutExt(w.filename)) + ".jpg"
 	err = lecimg.SaveJpeg(dest, w.destDir, filename, 80)
 	if err != nil {
 		log.Printf("Error : %v : %v\n", filename, err)

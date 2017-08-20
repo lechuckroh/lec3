@@ -9,6 +9,9 @@ import (
 	"sync"
 
 	"lec/lecimg"
+	"lec/lecio"
+	"lec/lecpdf"
+	"lec/leczip"
 )
 
 type IWork interface {
@@ -73,7 +76,7 @@ func collectImages(workChan chan<- IWork,
 	if srcFileInfo.IsDir() {
 		addImageWorks(srcFilename, false)
 	} else {
-		ext := lecimg.GetExt(srcFilename)
+		ext := lecio.GetExt(srcFilename)
 		if ext == ".zip" || ext == ".cbz" {
 			os.MkdirAll(destDir, os.ModePerm)
 			extractDir, _ := ioutil.TempDir(destDir, "_temp_")
@@ -82,10 +85,9 @@ func collectImages(workChan chan<- IWork,
 				addWork(extractDir, filename, true)
 			}
 
-			if err := Unzip(srcFilename, extractDir, callback); err != nil {
+			if err := leczip.Unzip(srcFilename, extractDir, callback); err != nil {
 				log.Fatal(err)
 			}
-			//addImageWorks(extractDir, true)
 		}
 	}
 }
@@ -115,7 +117,7 @@ type DestDirInfo struct {
 func getDestDirInfo(config *Config) DestDirInfo {
 	srcFilename := config.src.filename
 	destFilename := config.FormatDestFilename(srcFilename)
-	destFormat := lecimg.GetExt(destFilename)
+	destFormat := lecio.GetExt(destFilename)
 	destDir := config.dest.dir
 	isTempDir := destFormat != ""
 	if isTempDir {
@@ -137,7 +139,7 @@ func createPdf(srcDir string,
 	quality int,
 	showEdgePoint bool) {
 
-	opt := PdfOption{
+	opt := lecpdf.PdfOption{
 		Title:         metaData.Title,
 		Author:        metaData.Author,
 		Quality:       quality,
@@ -145,7 +147,7 @@ func createPdf(srcDir string,
 	}
 
 	log.Printf("[WRITE] %s", path.Join(destDir, filename))
-	if err := CreateImagePdf(srcDir, destDir, filename, opt); err != nil {
+	if err := lecpdf.CreateImagePdf(srcDir, destDir, filename, opt); err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Done.")
@@ -153,7 +155,7 @@ func createPdf(srcDir string,
 
 func createZip(srcDir string, destDir string, filename string) {
 	log.Printf("[WRITE] %s", path.Join(destDir, filename))
-	if err := CreateImageZip(srcDir, destDir, filename); err != nil {
+	if err := leczip.CreateImageZip(srcDir, destDir, filename); err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Done.")
@@ -161,7 +163,7 @@ func createZip(srcDir string, destDir string, filename string) {
 
 func startWorks(config *Config) {
 	srcFilename := config.src.filename
-	exists, _ := lecimg.Exists(srcFilename)
+	exists, _ := lecio.Exists(srcFilename)
 	if !exists {
 		log.Printf("File not found : %s", srcFilename)
 		return

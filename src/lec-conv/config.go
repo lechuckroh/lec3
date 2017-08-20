@@ -9,6 +9,8 @@ import (
 
 	"lec/lecimg"
 
+	"lec/lecio"
+
 	"github.com/olebedev/config"
 )
 
@@ -22,7 +24,7 @@ type DestOption struct {
 
 // Format returns extension of filename in lowercase
 func (opt DestOption) Format() string {
-	return lecimg.GetExt(opt.filename)
+	return lecio.GetExt(opt.filename)
 }
 
 type FilterOption struct {
@@ -112,7 +114,7 @@ func (c *Config) FormatDestFilename(dirname string) string {
 	base := path.Base(dirname)
 	result = strings.Replace(result, "${filename}", base, -1)
 
-	baseFilename := lecimg.GetBaseWithoutExt(base)
+	baseFilename := lecio.GetBaseWithoutExt(base)
 	result = strings.Replace(result, "${baseFilename}", baseFilename, -1)
 	return result
 }

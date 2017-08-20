@@ -11,6 +11,8 @@ import (
 	"io"
 	"os"
 	"path"
+
+	"lec/lecio"
 )
 
 type Changeable interface {
@@ -26,7 +28,7 @@ func SetColorAt(img image.Image, x, y int, color color.Color) {
 func LoadImage(filename string) (image.Image, error) {
 	var decoder func(io.Reader) (image.Image, error)
 
-	ext := GetExt(filename)
+	ext := lecio.GetExt(filename)
 	switch ext {
 	case ".jpg", ".jpeg":
 		decoder = jpeg.Decode
