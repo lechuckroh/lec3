@@ -1,6 +1,10 @@
 package lecimg
 
-import "image"
+import (
+	"image"
+	"image/color"
+	"image/draw"
+)
 
 // GetCropRect gets constraint satisfied cropped Rectagle
 func GetCropRect(left, top, right, bottom int, bounds image.Rectangle, maxWidthCropRate, maxHeightCropRate, minRatio, maxRatio float32) image.Rectangle {
@@ -71,4 +75,19 @@ func GetCropRect(left, top, right, bottom int, bounds image.Rectangle, maxWidthC
 	}
 
 	return image.Rect(left, top, right, bottom)
+}
+
+func CropImage(src image.Image, rect image.Rectangle) image.Image {
+	slicedImage := src.(interface {
+		SubImage(r image.Rectangle) image.Image
+	}).SubImage(rect)
+
+	result := CreateImage(rect.Dx(), rect.Dy(), color.White)
+	draw.Draw(result,
+		image.Rect(-rect.Min.X, -rect.Min.Y, rect.Max.X, rect.Max.Y),
+		slicedImage,
+		image.ZP,
+		draw.Src)
+
+	return result
 }

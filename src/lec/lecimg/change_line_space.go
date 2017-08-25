@@ -274,17 +274,8 @@ func (f ChangeLineSpaceFilter) run(src image.Image) (image.Image, image.Rectangl
 			rangeTargetHeight := r.targetHeight
 
 			if rangeHeight > 0 && rangeTargetHeight > 0 {
-				slicedImage := src.(interface {
-					SubImage(r image.Rectangle) image.Image
-				}).SubImage(image.Rect(0, r.start, width, r.start+rangeHeight))
+				rangeImage := CropImage(src, image.Rect(0, r.start, width, r.start+rangeHeight))
 
-				// copy range to rangeImage
-				rangeImage := CreateImage(width, rangeHeight, color.White)
-				draw.Draw(rangeImage,
-					image.Rect(0, -r.start, width, targetHeight),
-					slicedImage,
-					image.ZP,
-					draw.Src)
 				var resized image.Image
 				if rangeTargetHeight == rangeHeight {
 					resized = rangeImage
@@ -302,6 +293,7 @@ func (f ChangeLineSpaceFilter) run(src image.Image) (image.Image, image.Rectangl
 				destY += rangeTargetHeight
 			}
 		}
+		SaveJpeg(dest, "temp", "result.jpg", 85)
 		return dest, bounds
 	}
 }
