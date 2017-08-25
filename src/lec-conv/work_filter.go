@@ -49,7 +49,7 @@ func (w FilterWork) Run() bool {
 	}
 
 	// resize
-	dest = lecimg.ResizeImage(dest, w.width, w.height)
+	dest = lecimg.ResizeImage(dest, w.width, w.height, true)
 
 	// save dest Image
 	filename := strings.ToLower(lecio.GetBaseWithoutExt(w.filename)) + ".jpg"

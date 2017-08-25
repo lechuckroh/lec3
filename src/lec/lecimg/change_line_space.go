@@ -274,15 +274,32 @@ func (f ChangeLineSpaceFilter) run(src image.Image) (image.Image, image.Rectangl
 			rangeTargetHeight := r.targetHeight
 
 			if rangeHeight > 0 && rangeTargetHeight > 0 {
-				srcRect := image.Rect(0, r.start, width, r.start+rangeTargetHeight)
-				subImage := src.(interface {
+				slicedImage := src.(interface {
 					SubImage(r image.Rectangle) image.Image
-				}).SubImage(srcRect)
+				}).SubImage(image.Rect(0, r.start, width, r.start+rangeHeight))
 
-				destRect := image.Rect(0, destY, width, targetHeight)
-				draw.Draw(dest, destRect, subImage, image.ZP, draw.Src)
+				// copy range to rangeImage
+				rangeImage := CreateImage(width, rangeHeight, color.White)
+				draw.Draw(rangeImage,
+					image.Rect(0, -r.start, width, targetHeight),
+					slicedImage,
+					image.ZP,
+					draw.Src)
+				var resized image.Image
+				if rangeTargetHeight == rangeHeight {
+					resized = rangeImage
+				} else {
+					resized = ResizeImage(rangeImage, width, rangeTargetHeight, false)
+				}
 
-				destY -= rangeHeight - rangeTargetHeight
+				// copy rangeImage to dest
+				draw.Draw(dest,
+					image.Rect(0, destY, width, destY+rangeTargetHeight),
+					resized,
+					image.ZP,
+					draw.Src)
+
+				destY += rangeTargetHeight
 			}
 		}
 		return dest, bounds
