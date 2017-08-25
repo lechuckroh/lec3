@@ -293,7 +293,6 @@ func (f ChangeLineSpaceFilter) run(src image.Image) (image.Image, image.Rectangl
 				destY += rangeTargetHeight
 			}
 		}
-		SaveJpeg(dest, "temp", "result.jpg", 85)
 		return dest, bounds
 	}
 }
