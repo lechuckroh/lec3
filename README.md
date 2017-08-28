@@ -1,18 +1,16 @@
-# LEC3
-
-## Requirements
-* Go v1.4+
+# Requirements
+* [Go](https://golang.org/)
 * [gb](https://getgb.io)
 
-## Build
+# Build
 To build all:
 ```bash
-$ gb build all
+$ gb build -ldflags="-s -w" all
 ```
 
 To build specific executable:
 ```bash
-$ gb build [packageName]
+$ gb build -ldflags="-s -w" [packageName]
 ```
 
 Available package names are:
