@@ -1,0 +1,23 @@
+src:
+  dir: ./input
+
+dest:
+  dir: ./output/dx
+  filename: ${baseFilename}.pdf
+
+width: 783
+height: 1135
+quality: 80
+showEdgePoint: true
+maxProcess: 0
+
+filters:
+  - name: changeLineSpace
+    options:
+      widthRatio: 783
+      heightRatio: 1135
+      lineSpaceScale: 0.1
+      minSpace: 1
+      maxRemove: 9999
+      threshold: 180
+      emptyLineThreshold: 0.001
