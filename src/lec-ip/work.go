@@ -4,7 +4,7 @@ import (
 	"image"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"sync"
@@ -69,7 +69,7 @@ func work(worker Worker, filters []lecimg.Filter, destDir string, wg *sync.WaitG
 
 		log.Printf("[R] %v\n", work.filename)
 
-		src, err := lecimg.LoadImage(path.Join(work.dir, work.filename))
+		src, err := lecimg.LoadImage(filepath.Join(work.dir, work.filename))
 		if err != nil {
 			log.Printf("Error : %v : %v\n", work.filename, err)
 			continue

@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"sync"
 
@@ -146,7 +146,7 @@ func createPdf(srcDir string,
 		ShowEdgePoint: showEdgePoint,
 	}
 
-	log.Printf("[WRITE] %s", path.Join(destDir, filename))
+	log.Printf("[WRITE] %s", filepath.Join(destDir, filename))
 	if err := lecpdf.CreateImagePdf(srcDir, destDir, filename, opt); err != nil {
 		log.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func createPdf(srcDir string,
 }
 
 func createZip(srcDir string, destDir string, filename string) {
-	log.Printf("[WRITE] %s", path.Join(destDir, filename))
+	log.Printf("[WRITE] %s", filepath.Join(destDir, filename))
 	if err := leczip.CreateImageZip(srcDir, destDir, filename); err != nil {
 		log.Fatal(err)
 	}
@@ -216,7 +216,7 @@ func startWorks(config *Config) {
 			config.dest.dir,
 			destInfo.filename)
 	case ".pdf":
-		metaData := GetMetaData(path.Base(srcFilename))
+		metaData := GetMetaData(filepath.Base(srcFilename))
 		createPdf(destInfo.dir,
 			config.dest.dir,
 			destInfo.filename,

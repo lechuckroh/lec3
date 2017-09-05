@@ -35,3 +35,11 @@ func TestGetMetaDataTitleYear(t *testing.T) {
 		PubYear: 2015,
 	})
 }
+
+func TestGetMetaDataDotInTitle(t *testing.T) {
+	testGetMetaData(t, "D3.js 인 액션 (2016)", MetaData{
+		Author:  "",
+		Title:   "D3.js 인 액션",
+		PubYear: 2016,
+	})
+}

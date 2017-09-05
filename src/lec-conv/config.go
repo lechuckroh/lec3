@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
 	"lec/lecimg"
-
 	"lec/lecio"
 
 	"github.com/olebedev/config"
@@ -111,7 +110,7 @@ func (c *Config) addFilterOption(name string, options map[string]interface{}) {
 func (c *Config) FormatDestFilename(dirname string) string {
 	result := c.dest.filename
 
-	base := path.Base(dirname)
+	base := filepath.Base(dirname)
 	result = strings.Replace(result, "${filename}", base, -1)
 
 	baseFilename := lecio.GetBaseWithoutExt(base)

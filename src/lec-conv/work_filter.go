@@ -4,7 +4,7 @@ import (
 	"image"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -25,7 +25,7 @@ type FilterWork struct {
 func (w FilterWork) Run() bool {
 	log.Printf("[READ] %v\n", w.filename)
 
-	srcPath := path.Join(w.srcDir, w.filename)
+	srcPath := filepath.Join(w.srcDir, w.filename)
 	src, err := lecimg.LoadImage(srcPath)
 	if err != nil {
 		log.Printf("Error : %v : %v\n", w.filename, err)
