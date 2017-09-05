@@ -8,7 +8,7 @@ import (
 
 func testChangeLineSpace(t *testing.T, img image.Image, option ChangeLineSpaceOption, expectedHeight int) {
 	// Run Filter
-	result := NewChangeLineSpaceFilter(option).Run(NewFilterSource(img, "filename"))
+	result := NewChangeLineSpaceFilter(option).Run(NewFilterSource(img, "filename", 0))
 
 	// Test result image size
 	destBounds := result.Img().Bounds()

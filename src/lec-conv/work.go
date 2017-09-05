@@ -47,10 +47,11 @@ func collectImages(workChan chan<- IWork,
 		log.Fatal(err)
 	}
 
-	addWork := func(dir string, filename string, removeSrc bool) {
+	addWork := func(dir string, filename string, index int, removeSrc bool) {
 		workChan <- FilterWork{
 			srcDir:    dir,
 			filename:  filename,
+			index:     index,
 			destDir:   destDir,
 			width:     config.width,
 			height:    config.height,
@@ -68,8 +69,8 @@ func collectImages(workChan chan<- IWork,
 		}
 
 		// add works
-		for _, file := range files {
-			addWork(dir, file.Name(), removeSrc)
+		for i, file := range files {
+			addWork(dir, file.Name(), i, removeSrc)
 		}
 	}
 
@@ -81,8 +82,8 @@ func collectImages(workChan chan<- IWork,
 			os.MkdirAll(destDir, os.ModePerm)
 			extractDir, _ := ioutil.TempDir(destDir, "_temp_")
 
-			callback := func(dir, filename string) {
-				addWork(extractDir, filename, true)
+			callback := func(dir, filename string, index int) {
+				addWork(extractDir, filename, index, true)
 			}
 
 			if err := leczip.Unzip(srcFilename, extractDir, callback); err != nil {

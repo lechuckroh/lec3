@@ -89,6 +89,10 @@ func (c *Config) addFilterOption(name string, options map[string]interface{}) {
 		if option, err := lecimg.NewChangeLineSpaceOption(options); err == nil {
 			filter = lecimg.NewChangeLineSpaceFilter(*option)
 		}
+	case "resize":
+		if option, err := lecimg.NewResizeOption(options); err == nil {
+			filter = lecimg.NewResizeFilter(*option)
+		}
 	default:
 		log.Printf("Unhandled filter name : %v\n", name)
 	}

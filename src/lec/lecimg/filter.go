@@ -6,11 +6,12 @@ import "image"
 type FilterSource struct {
 	image    image.Image
 	filename string
+	index    int
 }
 
 // NewFilterSource creates an instance of FilterSource
-func NewFilterSource(image image.Image, filename string) *FilterSource {
-	return &FilterSource{image, filename}
+func NewFilterSource(image image.Image, filename string, index int) *FilterSource {
+	return &FilterSource{image: image, filename: filename, index: index}
 }
 
 // FilterResult is a result of filter operation

@@ -78,7 +78,7 @@ func work(worker Worker, filters []lecimg.Filter, destDir string, wg *sync.WaitG
 		// run filters
 		var dest image.Image
 		for _, filter := range filters {
-			result := filter.Run(lecimg.NewFilterSource(src, work.filename))
+			result := filter.Run(lecimg.NewFilterSource(src, work.filename, -1))
 			result.Log()
 
 			resultImg := result.Img()

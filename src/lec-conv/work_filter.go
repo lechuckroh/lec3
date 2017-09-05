@@ -15,6 +15,7 @@ import (
 type FilterWork struct {
 	srcDir    string
 	filename  string
+	index     int
 	destDir   string
 	width     int
 	height    int
@@ -35,7 +36,7 @@ func (w FilterWork) Run() bool {
 	// run filters
 	var dest image.Image
 	for _, filter := range w.filters {
-		result := filter.Run(lecimg.NewFilterSource(src, w.filename))
+		result := filter.Run(lecimg.NewFilterSource(src, w.filename, w.index))
 		result.Log()
 
 		resultImg := result.Img()

@@ -8,7 +8,7 @@ import (
 
 func testDeskewED(t *testing.T, img image.Image, option DeskewEDOption, rotatedAngleMin, rotatedAngleMax float32) {
 	// Run Filter
-	result := NewDeskewEDFilter(option).Run(NewFilterSource(img, "filename"))
+	result := NewDeskewEDFilter(option).Run(NewFilterSource(img, "filename", 0))
 	rotatedAngle := result.(DeskewEDResult).rotatedAngle
 
 	// Test result image size

@@ -9,12 +9,12 @@ import (
 
 func testAutoCropED(t *testing.T, img image.Image, option AutoCropEDOption, expectedWidth, expectedHeight, allowedDelta int) {
 	// Run Filter
-	result := NewAutoCropEDFilter(option).Run(NewFilterSource(img, "filename"))
+	result := NewAutoCropEDFilter(option).Run(NewFilterSource(img, "filename", 0))
 
 	// Test result image size
 	destBounds := result.Img().Bounds()
-	widthMatch := InRange(destBounds.Dx(), expectedWidth - allowedDelta, expectedWidth + allowedDelta)
-	heightMatch := InRange(destBounds.Dy(), expectedHeight - allowedDelta, expectedHeight + allowedDelta)
+	widthMatch := InRange(destBounds.Dx(), expectedWidth-allowedDelta, expectedWidth+allowedDelta)
+	heightMatch := InRange(destBounds.Dy(), expectedHeight-allowedDelta, expectedHeight+allowedDelta)
 
 	if !widthMatch || !heightMatch {
 		resultRect := result.(AutoCropEDResult).rect

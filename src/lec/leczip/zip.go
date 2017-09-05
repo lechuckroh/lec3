@@ -44,7 +44,7 @@ func CreateImageZip(srcDir string, destDir string, filename string) error {
 	return nil
 }
 
-type UnzipCallback func(dir, filename string)
+type UnzipCallback func(dir, filename string, index int)
 
 func Unzip(src, dest string, callback UnzipCallback) error {
 	r, err := zip.OpenReader(src)
@@ -60,7 +60,7 @@ func Unzip(src, dest string, callback UnzipCallback) error {
 	os.MkdirAll(dest, 0755)
 
 	// Closure to address file descriptors issue with all the deferred .Close() methods
-	extractAndWriteFile := func(f *zip.File) error {
+	extractAndWriteFile := func(f *zip.File, index int) error {
 		rc, err := f.Open()
 		if err != nil {
 			return err
@@ -93,14 +93,14 @@ func Unzip(src, dest string, callback UnzipCallback) error {
 			}
 
 			if callback != nil {
-				callback(dest, filepath.Base(f.Name()))
+				callback(dest, filepath.Base(f.Name()), index)
 			}
 		}
 		return nil
 	}
 
-	for _, f := range r.File {
-		err := extractAndWriteFile(f)
+	for i, f := range r.File {
+		err := extractAndWriteFile(f, i)
 		if err != nil {
 			return err
 		}
