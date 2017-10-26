@@ -1,0 +1,22 @@
+src:
+  dir: ./input
+
+dest:
+  dir: ./output/ipad
+  filename: ${baseFilename}.pdf
+
+width: 1020
+height: 1496
+quality: 80
+maxProcess: 0
+
+filters:
+  - name: changeLineSpace
+    options:
+      widthRatio: 1020
+      heightRatio: 1496
+      lineSpaceScale: 0.1
+      minSpace: 1
+      maxRemove: 9999
+      threshold: 180
+      emptyLineThreshold: 0.01

@@ -12,6 +12,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/math/fixed"
+
 	"lec/lecio"
 )
 
@@ -125,4 +129,19 @@ func DrawLine(img *image.RGBA, x1, y1, x2, y2 int, lineColor color.Color) {
 			y += incY
 		}
 	}
+}
+
+func DrawLabel(img *image.RGBA, x, y int, label string, fgColor color.Color) {
+	point := fixed.Point26_6{
+		X: fixed.Int26_6(x * 64),
+		Y: fixed.Int26_6(y * 64),
+	}
+
+	d := &font.Drawer{
+		Dst:  img,
+		Src:  image.NewUniform(fgColor),
+		Face: basicfont.Face7x13,
+		Dot:  point,
+	}
+	d.DrawString(label)
 }

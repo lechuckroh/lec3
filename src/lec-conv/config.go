@@ -93,6 +93,10 @@ func (c *Config) addFilterOption(name string, options map[string]interface{}) {
 		if option, err := lecimg.NewResizeOption(options); err == nil {
 			filter = lecimg.NewResizeFilter(*option)
 		}
+	case "watermark":
+		if option, err := lecimg.NewWatermarkOption(options); err == nil {
+			filter = lecimg.NewWatermarkFilter(*option)
+		}
 	default:
 		log.Printf("Unhandled filter name : %v\n", name)
 	}
