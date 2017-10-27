@@ -14,7 +14,6 @@ import (
 type WatermarkOption struct {
 	Text     string
 	Location string
-	FontSize int
 }
 
 func NewWatermarkOption(m map[string]interface{}) (*WatermarkOption, error) {
@@ -59,7 +58,8 @@ func (f WatermarkFilter) Run(s *FilterSource) FilterResult {
 // actual watermark implementation
 func (f WatermarkFilter) run(src image.Image) image.Image {
 	text := f.option.Text
-	if len(text) == 0 {
+	textLength := len(text)
+	if textLength == 0 {
 		return src
 	}
 
@@ -67,32 +67,48 @@ func (f WatermarkFilter) run(src image.Image) image.Image {
 	dest := image.NewRGBA(bounds)
 
 	x, y := 0, 0
+	fontWidth := 8
+	fontHeight := 16
+	baselineMargin := 4
+	textWidth := textLength * fontWidth
 	switch f.option.Location {
 	case "TL":
+		x = 0
+		y = fontHeight
 		break
 	case "TC":
+		x = (bounds.Dx() - textWidth) / 2
+		y = fontHeight
 		break
 	case "TR":
+		x = bounds.Dx() - textWidth
+		y = fontHeight
 		break
 	case "CL":
+		x = 0
+		y = (bounds.Dy() - fontHeight) / 2
 		break
 	case "CC":
+		x = (bounds.Dx() - textWidth) / 2
+		y = (bounds.Dy() - fontHeight) / 2
 		break
 	case "CR":
+		x = bounds.Dx() - textWidth
+		y = (bounds.Dy() - fontHeight) / 2
 		break
 	case "BL":
 		x = 0
-		y = bounds.Dy()
+		y = bounds.Dy() - baselineMargin
 	case "BC":
-		// TODO: align center
-		x = bounds.Dx() / 2
-		y = bounds.Dy()
+		x = (bounds.Dx() - textWidth) / 2
+		y = bounds.Dy() - baselineMargin
 	case "BR":
+		x = bounds.Dx() - textWidth
+		y = bounds.Dy() - baselineMargin
 		break
 	}
 	draw.Draw(dest, dest.Bounds(), src, image.ZP, draw.Src)
 
-	// TODO: use font size option
-	DrawLabel(dest, x, y, text, color.Black)
+	DrawLabelBold8x16(dest, x, y, text, color.Gray{128})
 	return dest
 }
