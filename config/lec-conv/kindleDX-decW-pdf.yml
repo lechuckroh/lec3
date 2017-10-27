@@ -21,8 +21,8 @@ filters:
     options:
       widthRatio: 783
       heightRatio: 1135
-      lineSpaceScale: 0.01
+      lineSpaceScale: 0.005
       minSpace: 1
       maxRemove: 9999
       threshold: 180
-      emptyLineThreshold: 0.001
+      emptyLineThreshold: 0.005

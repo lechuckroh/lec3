@@ -20,4 +20,4 @@ filters:
       minSpace: 1
       maxRemove: 9999
       threshold: 180
-      emptyLineThreshold: 0.001
+      emptyLineThreshold: 0.005
