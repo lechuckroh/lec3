@@ -19,5 +19,6 @@
 /input/
 /output/
 /pkg
+*.iml
 
 \.DS_Store
