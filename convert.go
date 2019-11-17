@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"io/ioutil"
 	"log"
 	"os"
@@ -161,30 +160,7 @@ func (c *Convert) createZip(srcDir string, destDir string, filename string) {
 	log.Printf("Done.")
 }
 
-func (c *Convert) getConfig() *ConfigConv {
-	cfgFilename := flag.String("cfg", "", "configuration filename")
-	srcDir := flag.String("src", "", "source directory")
-	destDir := flag.String("dest", "", "dest directory")
-	flag.Parse()
-
-	if *cfgFilename == "" {
-		return nil
-	}
-
-	// create Config
-	config := NewConfigConv(*cfgFilename, *srcDir, *destDir)
-	return config
-}
-
-func (c *Convert) run() {
-	config := c.getConfig()
-	if config == nil || (flag.NFlag() == 1 && flag.Arg(1) == "help") {
-		flag.Usage()
-		return
-	}
-
-	config.Print()
-
+func (c *Convert) run(config *ConfigConv) {
 	srcFilename := config.src.filename
 	exists, _ := Exists(srcFilename)
 	if !exists {

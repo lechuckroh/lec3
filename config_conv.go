@@ -134,20 +134,3 @@ func (c *ConfigConv) Print() {
 	log.Printf("maxProcess : %v\n", c.maxProcess)
 	fmt.Printf("filters : %v\n", len(c.filterOptions))
 }
-
-// NewConfigConv creates an instance of ConfigConv
-func NewConfigConv(cfgFilename string, srcDir string, destDir string) *ConfigConv {
-	cfg := ConfigConv{}
-
-	if cfgFilename != "" {
-		cfg.LoadYaml(cfgFilename)
-	}
-	if srcDir != "" {
-		cfg.src.filename = srcDir
-	}
-	if destDir != "" {
-		cfg.dest.dir = destDir
-	}
-
-	return &cfg
-}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"runtime"
@@ -66,25 +65,36 @@ func (c *ConfigIP) LoadYaml(filename string) {
 }
 
 func (c *ConfigIP) addFilterOption(name string, options map[string]interface{}) {
-	var err error
 	var filter Filter
 
 	switch name {
 	case "deskew":
-		if option, err := NewDeskewOption(options); err == nil {
+		option, err := NewDeskewOption(options)
+		if err == nil {
 			filter = NewDeskewFilter(*option)
+		} else {
+			log.Printf("Failed to read filter : %v : %v\n", name, err)
 		}
 	case "deskewED":
-		if option, err := NewDeskewEDOption(options); err == nil {
+		option, err := NewDeskewEDOption(options)
+		if err == nil {
 			filter = NewDeskewEDFilter(*option)
+		} else {
+			log.Printf("Failed to read filter : %v : %v\n", name, err)
 		}
 	case "autoCrop":
-		if option, err := NewAutoCropOption(options); err == nil {
+		option, err := NewAutoCropOption(options)
+		if err == nil {
 			filter = NewAutoCropFilter(*option)
+		} else {
+			log.Printf("Failed to read filter : %v : %v\n", name, err)
 		}
 	case "autoCropED":
-		if option, err := NewAutoCropEDOption(options); err == nil {
+		option, err := NewAutoCropEDOption(options)
+		if err == nil {
 			filter = NewAutoCropEDFilter(*option)
+		} else {
+			log.Printf("Failed to read filter : %v : %v\n", name, err)
 		}
 	default:
 		log.Printf("Unhandled filter name : %v\n", name)
@@ -98,9 +108,6 @@ func (c *ConfigIP) addFilterOption(name string, options map[string]interface{}) 
 		c.filterOptions = append(c.filterOptions, filterOption)
 		fmt.Printf("Filter added : %v\n", name)
 	}
-	if err != nil {
-		log.Printf("Failed to read filter : %v : %v\n", name, err)
-	}
 }
 
 func (c *ConfigIP) Print() {
@@ -109,25 +116,4 @@ func (c *ConfigIP) Print() {
 	fmt.Printf("watch : %v\n", c.watch)
 	fmt.Printf("maxProcess : %v\n", c.maxProcess)
 	fmt.Printf("filters : %v\n", len(c.filterOptions))
-}
-
-func NewConfigIP(cfgFilename string, srcDir string, destDir string, watch bool) *ConfigIP {
-	cfg := ConfigIP{}
-
-	if cfgFilename != "" {
-		cfg.LoadYaml(cfgFilename)
-	} else {
-		// overwrite cfg with command line options
-		if srcFlag := flag.Lookup("src"); srcFlag != nil {
-			cfg.src.dir = srcDir
-		}
-		if destFlag := flag.Lookup("dest"); destFlag != nil {
-			cfg.dest.dir = destDir
-		}
-		if watchFlag := flag.Lookup("watch"); watchFlag != nil {
-			cfg.watch = watch
-		}
-	}
-
-	return &cfg
 }
