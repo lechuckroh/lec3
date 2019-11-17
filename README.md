@@ -1,20 +1,6 @@
-# Requirements
-* [Go](https://golang.org/)
-* [gb](https://getgb.io)
+# LEC3
 
-# Build
-To build all:
+## Build
 ```bash
-$ gb build -ldflags="-s -w" all
+$ 
 ```
-
-To build specific executable:
-```bash
-$ gb build -ldflags="-s -w" [packageName]
-```
-
-Available package names are:
-* `lec-conv`
-* `lec-ip`
-
-After successful build, you can find executable files under `./bin` directory.

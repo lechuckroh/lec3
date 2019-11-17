@@ -1,0 +1,16 @@
+# build server
+FROM golang:1.13 as builder
+WORKDIR /usr/src/myapp
+COPY . /usr/src/myapp
+RUN make build-linux
+
+# release
+FROM alpine:latest
+LABEL MAINTAINER="Lechuck Roh <lechuckroh@gmail.com>"
+RUN mkdir -p /app/logs
+COPY --from=builder /usr/src/myapp/lec /app/
+COPY --from=builder /usr/src/myapp/config /app/config
+WORKDIR /app
+VOLUME ["/app/config"]
+
+CMD ["./lec"]
