@@ -2,8 +2,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli"
 	"log"
 	"os"
 )
@@ -12,11 +11,11 @@ func main() {
 	SetLogPattern(TimeOnly)
 
 	app := &cli.App{
-		Name: "lec",
+		Name:  "lec",
 		Usage: "",
-		Commands: []*cli.Command{
+		Commands: []cli.Command{
 			{
-				Name: "ip",
+				Name:  "ip",
 				Usage: "run image processing",
 				Action: func(c *cli.Context) error {
 					cfg := ConfigIP{}
@@ -37,31 +36,29 @@ func main() {
 
 					return nil
 				},
-				Flags: []cli.Flag {
-					&cli.StringFlag {
-						Name: "cfg",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "cfg",
 						Usage: "configuration file",
 					},
-					&cli.StringFlag {
-						Name: "src",
+					&cli.StringFlag{
+						Name:  "src",
 						Value: "./",
-						Usage: "source filename",
+						Usage: "source directory",
 					},
-					&cli.StringFlag {
-						Name: "dest",
+					&cli.StringFlag{
+						Name:  "dest",
 						Value: "./output",
-						Usage: "destination filename or directory",
+						Usage: "destination directory",
 					},
-					&cli.BoolFlag {
-						Name: "watch",
-						Aliases: []string{"w"},
-						Value: false,
-						Usage: "watch directory files",
+					&cli.BoolFlag{
+						Name:  "watch",
+						Usage: "watch mode",
 					},
 				},
 			},
 			{
-				Name: "conv",
+				Name:  "conv",
 				Usage: "convert images to other format (pdf, zip, ...)",
 				Action: func(c *cli.Context) error {
 					cfgFilename := c.String("cfg")
@@ -86,26 +83,22 @@ func main() {
 
 					return nil
 				},
-				Flags: []cli.Flag {
-					&cli.StringFlag {
-						Name: "cfg",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "cfg",
 						Usage: "configuration file",
 					},
-					&cli.StringFlag {
-						Name: "src",
-						Usage: "source filename",
+					&cli.StringFlag{
+						Name:  "src",
+						Usage: "source directory",
 					},
-					&cli.StringFlag {
-						Name: "dest",
+					&cli.StringFlag{
+						Name:  "dest",
 						Value: "./output",
-						Usage: "destination directory",
+						Usage: "destination filename or directory",
 					},
 				},
 			},
-		},
-		Action: func(c *cli.Context) error {
-			fmt.Println("foo")
-			return nil
 		},
 	}
 

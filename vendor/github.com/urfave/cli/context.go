@@ -1,12 +1,10 @@
 package cli
 
 import (
-	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"os/signal"
 	"reflect"
 	"strings"
 	"syscall"
@@ -14,37 +12,23 @@ import (
 
 // Context is a type that is passed through to
 // each Handler action in a cli application. Context
-// can be used to retrieve context-specific args and
+// can be used to retrieve context-specific Args and
 // parsed command-line options.
 type Context struct {
-	context.Context
 	App           *App
-	Command       *Command
+	Command       Command
 	shellComplete bool
-	setFlags      map[string]bool
 	flagSet       *flag.FlagSet
+	setFlags      map[string]bool
 	parentContext *Context
 }
 
 // NewContext creates a new context. For use in when invoking an App or Command action.
 func NewContext(app *App, set *flag.FlagSet, parentCtx *Context) *Context {
 	c := &Context{App: app, flagSet: set, parentContext: parentCtx}
+
 	if parentCtx != nil {
-		c.Context = parentCtx.Context
 		c.shellComplete = parentCtx.shellComplete
-	}
-
-	c.Command = &Command{}
-
-	if c.Context == nil {
-		ctx, cancel := context.WithCancel(context.Background())
-		go func() {
-			defer cancel()
-			sigs := make(chan os.Signal, 1)
-			signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-			<-sigs
-		}()
-		c.Context = ctx
 	}
 
 	return c
@@ -57,23 +41,31 @@ func (c *Context) NumFlags() int {
 
 // Set sets a context flag to a value.
 func (c *Context) Set(name, value string) error {
+	c.setFlags = nil
 	return c.flagSet.Set(name, value)
+}
+
+// GlobalSet sets a context flag to a value on the global flagset
+func (c *Context) GlobalSet(name, value string) error {
+	globalContext(c).setFlags = nil
+	return globalContext(c).flagSet.Set(name, value)
 }
 
 // IsSet determines if the flag was actually set
 func (c *Context) IsSet(name string) bool {
-	if fs := lookupFlagSet(name, c); fs != nil {
-		if fs := lookupFlagSet(name, c); fs != nil {
-			isSet := false
-			fs.Visit(func(f *flag.Flag) {
-				if f.Name == name {
-					isSet = true
-				}
-			})
-			if isSet {
-				return true
+	if c.setFlags == nil {
+		c.setFlags = make(map[string]bool)
+
+		c.flagSet.Visit(func(f *flag.Flag) {
+			c.setFlags[f.Name] = true
+		})
+
+		c.flagSet.VisitAll(func(f *flag.Flag) {
+			if _, ok := c.setFlags[f.Name]; ok {
+				return
 			}
-		}
+			c.setFlags[f.Name] = false
+		})
 
 		// XXX hack to support IsSet for flags with EnvVar
 		//
@@ -86,145 +78,177 @@ func (c *Context) IsSet(name string) bool {
 		// variables is available.
 		//
 		// See https://github.com/urfave/cli/issues/294 for additional discussion
-		f := lookupFlag(name, c)
-		if f == nil {
-			return false
+		flags := c.Command.Flags
+		if c.Command.Name == "" { // cannot == Command{} since it contains slice types
+			if c.App != nil {
+				flags = c.App.Flags
+			}
 		}
+		for _, f := range flags {
+			eachName(f.GetName(), func(name string) {
+				if isSet, ok := c.setFlags[name]; isSet || !ok {
+					return
+				}
 
-		val := reflect.ValueOf(f)
-		if val.Kind() == reflect.Ptr {
-			val = val.Elem()
+				val := reflect.ValueOf(f)
+				if val.Kind() == reflect.Ptr {
+					val = val.Elem()
+				}
+
+				filePathValue := val.FieldByName("FilePath")
+				if filePathValue.IsValid() {
+					eachName(filePathValue.String(), func(filePath string) {
+						if _, err := os.Stat(filePath); err == nil {
+							c.setFlags[name] = true
+							return
+						}
+					})
+				}
+
+				envVarValue := val.FieldByName("EnvVar")
+				if envVarValue.IsValid() {
+					eachName(envVarValue.String(), func(envVar string) {
+						envVar = strings.TrimSpace(envVar)
+						if _, ok := syscall.Getenv(envVar); ok {
+							c.setFlags[name] = true
+							return
+						}
+					})
+				}
+			})
 		}
-
-		filePathValue := val.FieldByName("FilePath")
-		if !filePathValue.IsValid() {
-			return false
-		}
-
-		envVarValues := val.FieldByName("EnvVars")
-		if !envVarValues.IsValid() {
-			return false
-		}
-
-		_, ok := flagFromEnvOrFile(envVarValues.Interface().([]string), filePathValue.Interface().(string))
-		return ok
 	}
 
+	return c.setFlags[name]
+}
+
+// GlobalIsSet determines if the global flag was actually set
+func (c *Context) GlobalIsSet(name string) bool {
+	ctx := c
+	if ctx.parentContext != nil {
+		ctx = ctx.parentContext
+	}
+
+	for ; ctx != nil; ctx = ctx.parentContext {
+		if ctx.IsSet(name) {
+			return true
+		}
+	}
 	return false
 }
 
-// LocalFlagNames returns a slice of flag names used in this context.
-func (c *Context) LocalFlagNames() []string {
-	var names []string
-	c.flagSet.Visit(makeFlagNameVisitor(&names))
-	return names
-}
-
-// FlagNames returns a slice of flag names used by the this context and all of
-// its parent contexts.
-func (c *Context) FlagNames() []string {
-	var names []string
-	for _, ctx := range c.Lineage() {
-		ctx.flagSet.Visit(makeFlagNameVisitor(&names))
-
-	}
-	return names
-}
-
 // FlagNames returns a slice of flag names used in this context.
-//func (c *Context) FlagNames() (names []string) {
-//	for _, f := range c.Command.Flags {
-//		name := strings.Split(f.GetName(), ",")[0]
-//		if name == "help" {
-//			continue
-//		}
-//		names = append(names, name)
-//	}
-//	return
-//}
+func (c *Context) FlagNames() (names []string) {
+	for _, f := range c.Command.Flags {
+		name := strings.Split(f.GetName(), ",")[0]
+		if name == "help" {
+			continue
+		}
+		names = append(names, name)
+	}
+	return
+}
 
 // GlobalFlagNames returns a slice of global flag names used by the app.
-//func (c *Context) GlobalFlagNames() (names []string) {
-//	for _, f := range c.App.Flags {
-//		name := strings.Split(f.GetName(), ",")[0]
-//		if name == "help" || name == "version" {
-//			continue
-//		}
-//		names = append(names, name)
-//	}
-//	return names
-//}
-
-// Lineage returns *this* context and all of its ancestor contexts in order from
-// child to parent
-func (c *Context) Lineage() []*Context {
-	var lineage []*Context
-
-	for cur := c; cur != nil; cur = cur.parentContext {
-		lineage = append(lineage, cur)
+func (c *Context) GlobalFlagNames() (names []string) {
+	for _, f := range c.App.Flags {
+		name := strings.Split(f.GetName(), ",")[0]
+		if name == "help" || name == "version" {
+			continue
+		}
+		names = append(names, name)
 	}
-
-	return lineage
+	return
 }
 
-// value returns the value of the flag corresponding to `name`
+// Parent returns the parent context, if any
+func (c *Context) Parent() *Context {
+	return c.parentContext
+}
+
+// value returns the value of the flag coressponding to `name`
 func (c *Context) value(name string) interface{} {
 	return c.flagSet.Lookup(name).Value.(flag.Getter).Get()
 }
 
+// Args contains apps console arguments
+type Args []string
+
 // Args returns the command line arguments associated with the context.
 func (c *Context) Args() Args {
-	ret := args(c.flagSet.Args())
-	return &ret
+	args := Args(c.flagSet.Args())
+	return args
 }
 
 // NArg returns the number of the command line arguments.
 func (c *Context) NArg() int {
-	return c.Args().Len()
+	return len(c.Args())
 }
 
-func lookupFlag(name string, ctx *Context) Flag {
-	for _, c := range ctx.Lineage() {
-		if c.Command == nil {
-			continue
-		}
-
-		for _, f := range c.Command.Flags {
-			for _, n := range f.Names() {
-				if n == name {
-					return f
-				}
-			}
-		}
+// Get returns the nth argument, or else a blank string
+func (a Args) Get(n int) string {
+	if len(a) > n {
+		return a[n]
 	}
+	return ""
+}
 
-	if ctx.App != nil {
-		for _, f := range ctx.App.Flags {
-			for _, n := range f.Names() {
-				if n == name {
-					return f
-				}
-			}
-		}
+// First returns the first argument, or else a blank string
+func (a Args) First() string {
+	return a.Get(0)
+}
+
+// Tail returns the rest of the arguments (not the first one)
+// or else an empty string slice
+func (a Args) Tail() []string {
+	if len(a) >= 2 {
+		return []string(a)[1:]
 	}
+	return []string{}
+}
 
+// Present checks if there are any arguments present
+func (a Args) Present() bool {
+	return len(a) != 0
+}
+
+// Swap swaps arguments at the given indexes
+func (a Args) Swap(from, to int) error {
+	if from >= len(a) || to >= len(a) {
+		return errors.New("index out of range")
+	}
+	a[from], a[to] = a[to], a[from]
 	return nil
 }
 
-func lookupFlagSet(name string, ctx *Context) *flag.FlagSet {
-	for _, c := range ctx.Lineage() {
-		if f := c.flagSet.Lookup(name); f != nil {
-			return c.flagSet
-		}
+func globalContext(ctx *Context) *Context {
+	if ctx == nil {
+		return nil
 	}
 
+	for {
+		if ctx.parentContext == nil {
+			return ctx
+		}
+		ctx = ctx.parentContext
+	}
+}
+
+func lookupGlobalFlagSet(name string, ctx *Context) *flag.FlagSet {
+	if ctx.parentContext != nil {
+		ctx = ctx.parentContext
+	}
+	for ; ctx != nil; ctx = ctx.parentContext {
+		if f := ctx.flagSet.Lookup(name); f != nil {
+			return ctx.flagSet
+		}
+	}
 	return nil
 }
 
 func copyFlag(name string, ff *flag.Flag, set *flag.FlagSet) {
 	switch ff.Value.(type) {
-	case Serializer:
-		_ = set.Set(name, ff.Value.(Serializer).Serialize())
+	case *StringSlice:
 	default:
 		_ = set.Set(name, ff.Value.String())
 	}
@@ -236,7 +260,7 @@ func normalizeFlags(flags []Flag, set *flag.FlagSet) error {
 		visited[f.Name] = true
 	})
 	for _, f := range flags {
-		parts := f.Names()
+		parts := strings.Split(f.GetName(), ",")
 		if len(parts) == 1 {
 			continue
 		}
@@ -261,24 +285,6 @@ func normalizeFlags(flags []Flag, set *flag.FlagSet) error {
 		}
 	}
 	return nil
-}
-
-func makeFlagNameVisitor(names *[]string) func(*flag.Flag) {
-	return func(f *flag.Flag) {
-		nameParts := strings.Split(f.Name, ",")
-		name := strings.TrimSpace(nameParts[0])
-
-		for _, part := range nameParts {
-			part = strings.TrimSpace(part)
-			if len(part) > len(name) {
-				name = part
-			}
-		}
-
-		if name != "" {
-			*names = append(*names, name)
-		}
-	}
 }
 
 type requiredFlagsErr interface {
@@ -309,7 +315,7 @@ func checkRequiredFlags(flags []Flag, context *Context) requiredFlagsErr {
 		if rf, ok := f.(RequiredFlag); ok && rf.IsRequired() {
 			var flagPresent bool
 			var flagName string
-			for _, key := range f.Names() {
+			for _, key := range strings.Split(f.GetName(), ",") {
 				if len(key) > 1 {
 					flagName = key
 				}
