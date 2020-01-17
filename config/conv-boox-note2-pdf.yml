@@ -1,0 +1,26 @@
+src:
+  dir: ./input
+
+dest:
+  dir: ./output/boox-note2
+  filename: ${baseFilename}.pdf
+
+width: 1404
+height: 1872
+quality: 80
+maxProcess: 0
+
+filters:
+  - name: changeLineSpace
+    options:
+      widthRatio: 1404
+      heightRatio: 1871
+      lineSpaceScale: 0.1
+      minSpace: 1
+      maxRemove: 9999
+      threshold: 180
+      emptyLineThreshold: 0.005
+  - name: watermark
+    options:
+      text:
+      location: BC
