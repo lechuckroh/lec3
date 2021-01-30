@@ -48,19 +48,19 @@ DOCKERFILE=Dockerfile
 BUILD_DOCKERFILE=build-Dockerfile
 
 # Build docker image
-docker-image: build-linux
+image: build-linux
 	@docker rmi $(DOCKER_IMAGE_NAME):$(VERSION)
 	@DOCKER_BUILDKIT=0 docker build --no-cache -f $(DOCKERFILE) -t $(DOCKER_IMAGE_NAME):$(VERSION) .
 
 # Build docker image within docker
-docker-image-in-docker:
+image-in-docker:
 	@DOCKER_BUILDKIT=0 docker build --no-cache -f $(BUILD_DOCKERFILE) -t $(DOCKER_IMAGE_NAME):$(VERSION) .
 
-docker-push:
+push-image:
 	@docker tag $(DOCKER_IMAGE_NAME):$(VERSION) $(DOCKER_IMAGE_NAME):latest
 	@docker push $(DOCKER_IMAGE_NAME):$(VERSION)
 	@docker push $(DOCKER_IMAGE_NAME):latest
 	@docker rmi $(DOCKER_IMAGE_NAME):latest
 
-docker-rmi:
+rmi:
 	@docker rmi $(DOCKER_IMAGE_NAME):$(VERSION)

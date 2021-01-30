@@ -10,6 +10,9 @@ $ make build-linux
 
 # build windows binary
 $ make build-windows
+
+# build docker image
+$ make image
 ```
 
 ## Run
